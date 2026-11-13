@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>For Nina ❤️</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: radial-gradient(circle at 50% 40%, #1c0817 0%, #0d030a 60%, #050104 100%);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            color: #fff;
+            touch-action: none;
+        }
+
+        .font-serif-elegant {
+            font-family: 'Playfair Display', serif;
+        }
+
+        #canvas-container {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        /* Clean Minimalist Glassmorphism */
+        .clean-glass {
+            background: rgba(255, 255, 255, 0.045);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 
+                0 30px 60px -15px rgba(0, 0, 0, 0.6),
+                inset 0 1px 0 0 rgba(255, 255, 255, 0.15);
+        }
+
+        .clean-pill {
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+        }
+
+        /* Waypoint Cards in 3D Depth */
+        .chapter-card {
+            transition: opacity 0.55s cubic-bezier(0.16, 1, 0.3, 1),
+                        transform 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+            will-change: opacity, transform;
+        }
+
+        /* Primary Romantic Button */
+        .btn-primary-rose {
+            background: linear-gradient(135deg, #fb7185 0%, #e11d48 100%);
+            box-shadow: 0 12px 28px -6px rgba(225, 29, 72, 0.55), inset 0 1px 1px rgba(255, 255, 255, 0.35);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .btn-primary-rose:hover {
+            box-shadow: 0 16px 36px -4px rgba(244, 63, 94, 0.75), inset 0 1px 2px rgba(255, 255, 255, 0.5);
+            transform: translateY(-1px);
+        }
+
+        /* Unclickable Dodging No Button */
+        #no-btn {
+            transition: left 0.28s cubic-bezier(0.34, 1.56, 0.64, 1),
+                        top 0.28s cubic-bezier(0.34, 1.56, 0.64, 1),
+                        transform 0.2s ease;
+        }
+
+        /* Custom Range Scrubber for Deep Navigation */
+        input[type=range].depth-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            background: transparent;
+            cursor: pointer;
+        }
+
+        input[type=range].depth-slider::-webkit-slider-runnable-track {
+            height: 4px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.16);
+        }
+
+        input[type=range].depth-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #fb7185;
+            box-shadow: 0 0 12px rgba(251, 113, 133, 0.9);
+            margin-top: -6px;
+            border: 2px solid #fff;
+            transition: transform 0.2s ease;
+        }
+
+        input[type=range].depth-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.25);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 3D Three.js Canvas -->
+    <div id="canvas-container"></div>
+
+    <!-- Top Minimalist HUD -->
+    <header class="fixed top-0 left-0 right-0 z-20 flex items-center justify-between px-5 py-4 pointer-events-none">
+        <div class="clean-pill px-4 py-1.5 rounded-full flex items-center gap-2.5 text-xs tracking-wide text-rose-100/90 pointer-events-auto">
+            <span class="w-2 h-2 rounded-full bg-rose-400 animate-pulse"></span>
+            <span class="font-medium">FOR NINA</span>
+            <span class="text-white/30">|</span>
+            <span id="depth-readout" class="text-rose-300/90 font-mono text-[11px]">DEPTH 0%</span>
+        </div>
+
+        <div class="flex items-center gap-2.5 pointer-events-auto">
+            <button id="autopilot-btn" class="clean-pill px-3.5 py-1.5 rounded-full text-xs text-rose-100/80 hover:text-white hover:bg-white/10 transition flex items-center gap-1.5 cursor-pointer" title="Auto-Fly Through Tunnel">
+                <span id="autopilot-dot" class="w-1.5 h-1.5 rounded-full bg-white/40"></span>
+                <span>Auto-Glide</span>
+            </button>
+
+            <button id="audio-btn" class="clean-pill p-2 rounded-full text-rose-100/80 hover:text-white hover:bg-white/10 transition cursor-pointer" title="Toggle Chimes">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <!-- Playful Floating Toast when Nina tries clicking "No" -->
+    <div id="nina-toast" class="fixed top-20 left-1/2 -translate-x-1/2 z-40 pointer-events-none opacity-0 -translate-y-2 transition-all duration-300 clean-pill px-4 py-2 rounded-full text-xs sm:text-sm text-rose-100 shadow-2xl whitespace-nowrap">
+        Nice try, Nina! That button refuses to work 😉❤️
+    </div>
+
+    <!-- Center Spatial Viewport for Waypoint Cards -->
+    <main id="spatial-ui" class="fixed inset-0 z-10 flex items-center justify-center p-5 pointer-events-none">
+
+        <!-- CHAPTER 1: Welcome / Entrance -->
+        <section data-chapter="0" class="chapter-card clean-glass w-full max-w-md rounded-3xl p-7 sm:p-9 text-center pointer-events-auto">
+            <p class="text-[11px] uppercase tracking-[0.25em] text-rose-300/80 font-semibold mb-3">Chapter 01 · The Beginning</p>
+            <h1 class="font-serif-elegant text-3xl sm:text-4xl font-medium text-white tracking-tight leading-snug mb-3">
+                Hi, <span class="italic text-rose-300">Nina</span>.
+            </h1>
+            <p class="text-sm sm:text-base text-rose-100/75 font-light leading-relaxed mb-7">
+                I built a quiet universe of a thousand floating hearts just for you. Scroll, swipe, or glide deep inside to see where every single one of them leads.
+            </p>
+            <button onclick="navigateToChapter(1)" class="btn-primary-rose px-7 py-3 rounded-full text-xs sm:text-sm font-semibold tracking-wide text-white inline-flex items-center gap-2 cursor-pointer">
+                <span>Fly Deeper</span>
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                </svg>
+            </button>
+        </section>
+
+        <!-- CHAPTER 2: Mid-Tunnel Reflection -->
+        <section data-chapter="1" class="chapter-card clean-glass w-full max-w-md rounded-3xl p-7 sm:p-9 text-center hidden opacity-0 scale-95">
+            <p class="text-[11px] uppercase tracking-[0.25em] text-rose-300/80 font-semibold mb-3">Chapter 02 · Every Orbit</p>
+            <h2 class="font-serif-elegant text-3xl sm:text-4xl font-medium text-white tracking-tight leading-snug mb-3">
+                Everything feels lighter with you.
+            </h2>
+            <p class="text-sm sm:text-base text-rose-100/75 font-light leading-relaxed mb-7">
+                No matter how fast the world moves, talking to you, seeing your smile, and being around you always feels like the calmest, happiest place to be.
+            </p>
+            <div class="flex items-center justify-center gap-3">
+                <button onclick="navigateToChapter(0)" class="clean-pill px-4 py-3 rounded-full text-xs text-rose-200/80 hover:text-white transition cursor-pointer">
+                    Back
+                </button>
+                <button onclick="navigateToChapter(2)" class="btn-primary-rose px-7 py-3 rounded-full text-xs sm:text-sm font-semibold tracking-wide text-white inline-flex items-center gap-2 cursor-pointer">
+                    <span>Keep Gliding</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                    </svg>
+                </button>
+            </div>
+        </section>
+
+        <!-- CHAPTER 3: Deep Heart Sanctuary -->
+        <section data-chapter="2" class="chapter-card clean-glass w-full max-w-md rounded-3xl p-7 sm:p-9 text-center hidden opacity-0 scale-95">
+            <p class="text-[11px] uppercase tracking-[0.25em] text-rose-300/80 font-semibold mb-3">Chapter 03 · Closer</p>
+            <h2 class="font-serif-elegant text-3xl sm:text-4xl font-medium text-white tracking-tight leading-snug mb-3">
+                Look around you, <span class="italic text-rose-300">Nina</span>.
+            </h2>
+            <p class="text-sm sm:text-base text-rose-100/75 font-light leading-relaxed mb-7">
+                Every heart floating in this space is a little reminder of how special you are to me—and right ahead at the center of this universe is one simple question.
+            </p>
+            <div class="flex items-center justify-center gap-3">
+                <button onclick="navigateToChapter(1)" class="clean-pill px-4 py-3 rounded-full text-xs text-rose-200/80 hover:text-white transition cursor-pointer">
+                    Back
+                </button>
+                <button onclick="navigateToChapter(3)" class="btn-primary-rose px-7 py-3 rounded-full text-xs sm:text-sm font-semibold tracking-wide text-white inline-flex items-center gap-2 cursor-pointer">
+                    <span>Reach the Center</span>
+                    <span>✨</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- CHAPTER 4: THE PROPOSAL DESTINATION -->
+        <section id="proposal-card" data-chapter="3" class="chapter-card clean-glass w-full max-w-md rounded-3xl p-7 sm:p-9 text-center hidden opacity-0 scale-95">
+            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-500/15 border border-rose-300/25 text-rose-200 text-[11px] tracking-widest uppercase mb-4">
+                <span>❤️ The Core of My Heart</span>
+            </div>
+
+            <h2 class="font-serif-elegant text-3xl sm:text-5xl font-medium text-white tracking-tight leading-tight mb-3">
+                Nina, will you be my girl?
+            </h2>
+
+            <p class="text-sm sm:text-base text-rose-100/75 font-light leading-relaxed mb-7">
+                I want to make a million more memories with you, laugh with you, and call you mine.
+            </p>
+
+            <!-- Buttons Stage -->
+            <div id="proposal-btn-stage" class="relative flex flex-wrap items-center justify-center gap-3.5 min-h-[56px]">
+                <button id="yes-btn" class="btn-primary-rose relative z-20 px-8 py-3.5 rounded-full text-sm sm:text-base font-semibold text-white tracking-wide flex items-center gap-2 cursor-pointer">
+                    <span>Yes, I will</span>
+                    <span>❤️</span>
+                </button>
+
+                <button id="no-btn" type="button" class="clean-pill px-6 py-3.5 rounded-full text-xs sm:text-sm font-medium text-rose-100/80 hover:text-white cursor-pointer">
+                    No
+                </button>
+            </div>
+
+            <p id="no-hint" class="text-[11px] text-rose-300/60 mt-4 h-4 opacity-0 transition-opacity duration-300">
+                The universe only accepts "Yes" from Nina ✨
+            </p>
+        </section>
+
+        <!-- CELEBRATION VIEW (After Nina clicks Yes) -->
+        <section id="celebration-card" class="clean-glass w-full max-w-md rounded-3xl p-7 sm:p-9 text-center hidden opacity-0 scale-95 transition-all duration-500 pointer-events-auto">
+            <div class="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-rose-400/20 border border-rose-300/35 text-rose-200 text-[11px] tracking-widest uppercase mb-4">
+                <span>✨ Best Moment Ever ✨</span>
+            </div>
+
+            <h2 class="font-serif-elegant text-3xl sm:text-5xl font-medium text-white leading-tight mb-3">
+                You & Me, <span class="italic text-rose-300">Nina</span> ❤️
+            </h2>
+
+            <p class="text-sm sm:text-base text-rose-100/80 font-light leading-relaxed mb-7">
+                You just made my whole universe light up. Here is to us, to endless adventures, and to every heartbeat ahead.
+            </p>
+
+            <div class="flex flex-wrap items-center justify-center gap-3">
+                <button id="warp-burst-btn" class="btn-primary-rose px-6 py-3 rounded-full text-xs sm:text-sm font-semibold text-white flex items-center gap-2 cursor-pointer">
+                    <span>Pulse Heart Vortex</span>
+                    <span>💖</span>
+                </button>
+
+                <button id="free-fly-btn" class="clean-pill px-5 py-3 rounded-full text-xs sm:text-sm text-rose-100 hover:bg-white/10 transition cursor-pointer">
+                    Explore 3D Space Freely
+                </button>
+            </div>
+        </section>
+    </main>
+
+    <!-- Floating Button to Return UI when in Free-Explore Mode -->
+    <button id="show-card-btn" class="fixed bottom-20 left-1/2 -translate-x-1/2 z-30 hidden clean-pill px-5 py-2.5 rounded-full text-xs font-medium text-rose-100 hover:bg-white/15 transition cursor-pointer shadow-lg">
+        Show Message for Nina ❤️
+    </button>
+
+    <!-- Bottom Deep Z-Axis Navigation Scrubber & Waypoints -->
+    <footer id="depth-nav-bar" class="fixed bottom-4 left-1/2 -translate-x-1/2 z-20 w-[92%] max-w-lg clean-pill rounded-2xl px-4 py-3 flex flex-col gap-2">
+        <div class="flex items-center justify-between text-[11px] text-rose-200/75 px-1">
+            <span>Scroll, drag, or slide to fly through depth</span>
+            <div class="flex items-center gap-1.5">
+                <button onclick="navigateToChapter(0)" class="waypoint-dot w-5 h-5 rounded-full text-[10px] font-semibold flex items-center justify-center bg-rose-500 text-white transition cursor-pointer">1</button>
+                <button onclick="navigateToChapter(1)" class="waypoint-dot w-5 h-5 rounded-full text-[10px] font-semibold flex items-center justify-center bg-white/10 text-rose-200 hover:bg-white/20 transition cursor-pointer">2</button>
+                <button onclick="navigateToChapter(2)" class="waypoint-dot w-5 h-5 rounded-full text-[10px] font-semibold flex items-center justify-center bg-white/10 text-rose-200 hover:bg-white/20 transition cursor-pointer">3</button>
+                <button onclick="navigateToChapter(3)" class="waypoint-dot w-5 h-5 rounded-full text-[10px] font-semibold flex items-center justify-center bg-white/10 text-rose-200 hover:bg-white/20 transition cursor-pointer">❤️</button>
+            </div>
+        </div>
+
+        <input id="depth-slider" type="range" min="0" max="1000" value="0" class="depth-slider w-full" aria-label="3D Tunnel Depth Navigation">
+    </footer>
+
+    <script>
+        /******************************************************************
+         * 1. MINIMALIST SYNTHESIZED CHIMES (Web Audio API)
+         ******************************************************************/
+        class CleanChimeAudio {
+            constructor() {
+                this.ctx = null;
+                this.enabled = true;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    if (AudioCtx) this.ctx = new AudioCtx();
+                }
+                if (this.ctx && this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            }
+
+            playSoftTick(freq = 520) {
+                if (!this.enabled) return;
+                try {
+                    this.init();
+                    if (!this.ctx) return;
+                    const now = this.ctx.currentTime;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, now);
+                    osc.frequency.exponentialRampToValueAtTime(freq * 1.35, now + 0.09);
+
+                    gain.gain.setValueAtTime(0.06, now);
+                    gain.gain.exponentialRampToValueAtTime(0.0008, now + 0.11);
+
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.11);
+                } catch (e) {}
+            }
+
+            playRomanticChord() {
+                if (!this.enabled) return;
+                try {
+                    this.init();
+                    if (!this.ctx) return;
+                    const notes = [293.66, 369.99, 440.00, 554.37, 659.25, 880.00]; // D Major 9th dreamy chord
+                    notes.forEach((f, idx) => {
+                        const now = this.ctx.currentTime + idx * 0.08;
+                        const osc = this.ctx.createOscillator();
+                        const gain = this.ctx.createGain();
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(f, now);
+
+                        gain.gain.setValueAtTime(0.001, now);
+                        gain.gain.linearRampToValueAtTime(0.09, now + 0.04);
+                        gain.gain.exponentialRampToValueAtTime(0.0005, now + 2.2);
+
+                        osc.connect(gain);
+                        gain.connect(this.ctx.destination);
+                        osc.start(now);
+                        osc.stop(now + 2.3);
+                    });
+                } catch (e) {}
+            }
+        }
+
+        const sound = new CleanChimeAudio();
+
+        /******************************************************************
+         * 2. DEEP 3D HEART TUNNEL & SPATIAL NAVIGATION (Three.js)
+         ******************************************************************/
+        const TUNNEL_LENGTH = 240; // Total Z-depth from 0 to -240
+        const CHAPTER_Z = [0, -80, -160, -240];
+        const TOTAL_TUNNEL_HEARTS = 320; // Hundreds of 3D hearts along the corridor
+
+        let scene, camera, renderer;
+        let sanctuaryGroup, mainSanctuaryHeart, sanctuaryHalo;
+        let tunnelHearts = [];
+        let starDust;
+
+        // Navigation & Camera State
+        let targetProgress = 0; // 0.0 to 1.0
+        let currentProgress = 0;
+        let activeChapter = 0;
+        let isAutoGliding = false;
+        let isCelebration = false;
+        let warpSpeedMultiplier = 1;
+
+        // Pointer Parallax & Dragging
+        let pointerX = 0, pointerY = 0;
+        let isDragging = false;
+        let dragStartY = 0;
+        let dragStartX = 0;
+
+        // Create clean, crisp 2D Heart Bezier path
+        function createHeartShape() {
+            const shape = new THREE.Shape();
+            const x = 0, y = 0;
+            shape.moveTo(x, y + 0.55);
+            shape.bezierCurveTo(x, y + 0.55, x - 0.12, y + 1.25, x - 0.88, y + 1.25);
+            shape.bezierCurveTo(x - 1.85, y + 1.25, x - 1.85, y + 0.08, x - 1.85, y + 0.08);
+            shape.bezierCurveTo(x - 1.85, y - 0.8, x - 1.05, y - 1.55, x, y - 2.2);
+            shape.bezierCurveTo(x + 1.05, y - 1.55, x + 1.85, y - 0.8, x + 1.85, y + 0.08);
+            shape.bezierCurveTo(x + 1.85, y + 0.08, x + 1.85, y + 1.25, x + 0.88, y + 1.25);
+            shape.bezierCurveTo(x + 0.12, y + 1.25, x, y + 0.55, x, y + 0.55);
+            return shape;
+        }
+
+        // Curved flight path in 3D space so flying feels organic and cinematic
+        function getCameraPathPosition(t) {
+            const z = -t * TUNNEL_LENGTH;
+            const x = Math.sin(t * Math.PI * 2) * 3.2;
+            const y = Math.cos(t * Math.PI * 1.5) * 1.6;
+            return new THREE.Vector3(x, y, z);
+        }
+
+        function init3DUniverse() {
+            const container = document.getElementById('canvas-container');
+
+            scene = new THREE.Scene();
+            scene.fog = new THREE.FogExp2(0x0d030a, 0.018);
+
+            camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 300);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            container.appendChild(renderer.domElement);
+
+            // Soft, Clean Studio Lighting
+            const ambient = new THREE.AmbientLight(0xffe4e6, 0.85);
+            scene.add(ambient);
+
+            const dirLight1 = new THREE.DirectionalLight(0xffffff, 1.2);
+            dirLight1.position.set(8, 15, 12);
+            scene.add(dirLight1);
+
+            const dirLight2 = new THREE.DirectionalLight(0xf43f5e, 1.1);
+            dirLight2.position.set(-10, -10, -8);
+            scene.add(dirLight2);
+
+            const heartShape = createHeartShape();
+
+            // Shared Geometry for the 320 Tunnel Hearts (optimized for smooth 60fps)
+            const tunnelExtrude = {
+                depth: 0.28,
+                bevelEnabled: true,
+                bevelSegments: 4,
+                steps: 1,
+                bevelSize: 0.15,
+                bevelThickness: 0.15
+            };
+            const sharedHeartGeo = new THREE.ExtrudeGeometry(heartShape, tunnelExtrude);
+            sharedHeartGeo.center();
+
+            // Clean Romantic Color Palette for Hearts
+            const colors = [
+                0xf43f5e, // Rose
+                0xfb7185, // Soft Pink
+                0xfda4af, // Blush
+                0xe11d48, // Deep Ruby
+                0xfff1f2, // Pearl White
+                0xfde68a  // Warm Champagne Gold
+            ];
+
+            const materials = colors.map(col => new THREE.MeshPhongMaterial({
+                color: col,
+                emissive: 0x2d0616,
+                specular: 0xffffff,
+                shininess: 95
+            }));
+
+            // Populate the Deep 3D Tunnel with 320 Floating Hearts
+            for (let i = 0; i < TOTAL_TUNNEL_HEARTS; i++) {
+                const mat = materials[i % materials.length];
+                const mesh = new THREE.Mesh(sharedHeartGeo, mat);
+
+                // Place along the Z-corridor from +15 to -285
+                const t = i / TOTAL_TUNNEL_HEARTS;
+                const pathCenter = getCameraPathPosition(t);
+                const zPos = 10 - Math.random() * (TUNNEL_LENGTH + 45);
+
+                // Create a hollow tunnel around the camera path so hearts frame the view
+                const angle = Math.random() * Math.PI * 2;
+                const radius = 2.6 + Math.random() * 14.5;
+
+                const xPos = pathCenter.x + Math.cos(angle) * radius;
+                const yPos = pathCenter.y + Math.sin(angle) * radius;
+
+                mesh.position.set(xPos, yPos, zPos);
+
+                const scale = 0.12 + Math.random() * 0.32;
+                mesh.scale.set(scale, scale, scale);
+
+                mesh.rotation.set(
+                    (Math.random() - 0.5) * 0.7,
+                    Math.random() * Math.PI * 2,
+                    (Math.random() - 0.5) * 0.6
+                );
+
+                scene.add(mesh);
+
+                tunnelHearts.push({
+                    mesh,
+                    baseScale: scale,
+                    baseX: xPos,
+                    baseY: yPos,
+                    zPos,
+                    angle,
+                    radius,
+                    rotSpeedY: (Math.random() - 0.5) * 0.025,
+                    rotSpeedZ: (Math.random() - 0.5) * 0.015,
+                    bobSpeed: 1 + Math.random() * 2,
+                    bobOffset: Math.random() * Math.PI * 2
+                });
+            }
+
+            // Build the Grand Centerpiece Heart Sanctuary at the Final Destination (Z = -240)
+            sanctuaryGroup = new THREE.Group();
+            const destPos = getCameraPathPosition(1.0);
+            sanctuaryGroup.position.set(destPos.x, destPos.y + 1.7, destPos.z - 11);
+            scene.add(sanctuaryGroup);
+
+            const heroExtrude = {
+                depth: 0.6,
+                bevelEnabled: true,
+                bevelSegments: 10,
+                steps: 2,
+                bevelSize: 0.35,
+                bevelThickness: 0.35
+            };
+            const heroGeo = new THREE.ExtrudeGeometry(heartShape, heroExtrude);
+            heroGeo.center();
+
+            const heroMat = new THREE.MeshPhongMaterial({
+                color: 0xe11d48,
+                emissive: 0x4c0519,
+                specular: 0xffe4e6,
+                shininess: 120
+            });
+
+            mainSanctuaryHeart = new THREE.Mesh(heroGeo, heroMat);
+            sanctuaryGroup.add(mainSanctuaryHeart);
+
+            // Delicate wireframe halo around Nina's sanctuary heart
+            const haloMat = new THREE.MeshBasicMaterial({
+                color: 0xfda4af,
+                wireframe: true,
+                transparent: true,
+                opacity: 0.12
+            });
+            sanctuaryHalo = new THREE.Mesh(heroGeo, haloMat);
+            sanctuaryHalo.scale.set(1.12, 1.12, 1.12);
+            sanctuaryGroup.add(sanctuaryHalo);
+
+            // Point Light illuminating the final destination
+            const sanctuaryLight = new THREE.PointLight(0xf43f5e, 3.5, 45);
+            sanctuaryLight.position.set(destPos.x, destPos.y + 2, destPos.z - 6);
+            scene.add(sanctuaryLight);
+
+            // Fine Shimmering Stardust Field spanning the whole tunnel
+            const dustCount = 1200;
+            const dustGeo = new THREE.BufferGeometry();
+            const dustPositions = new Float32Array(dustCount * 3);
+
+            for (let i = 0; i < dustCount; i++) {
+                dustPositions[i * 3] = (Math.random() - 0.5) * 45;
+                dustPositions[i * 3 + 1] = (Math.random() - 0.5) * 35;
+                dustPositions[i * 3 + 2] = 15 - Math.random() * (TUNNEL_LENGTH + 60);
+            }
+
+            dustGeo.setAttribute('position', new THREE.BufferAttribute(dustPositions, 3));
+            const dustMat = new THREE.PointsMaterial({
+                color: 0xffd1dc,
+                size: 0.08,
+                transparent: true,
+                opacity: 0.65
+            });
+
+            starDust = new THREE.Points(dustGeo, dustMat);
+            scene.add(starDust);
+
+            setupDeepNavigationEvents();
+        }
+
+        /******************************************************************
+         * 3. DEEP NAVIGATION CONTROLS (Scroll, Drag, Swipe, Slider, Waypoints)
+         ******************************************************************/
+        const depthSlider = document.getElementById('depth-slider');
+        const depthReadout = document.getElementById('depth-readout');
+        const chapterCards = document.querySelectorAll('.chapter-card');
+        const waypointDots = document.querySelectorAll('.waypoint-dot');
+        const autopilotBtn = document.getElementById('autopilot-btn');
+        const autopilotDot = document.getElementById('autopilot-dot');
+
+        function setTargetDepth(newProgress) {
+            targetProgress = Math.max(0, Math.min(1, newProgress));
+            depthSlider.value = Math.round(targetProgress * 1000);
+        }
+
+        window.navigateToChapter = function(chapterIndex) {
+            isAutoGliding = false;
+            updateAutopilotUI();
+            const chapterProgress = chapterIndex / 3;
+            setTargetDepth(chapterProgress);
+            sound.playSoftTick(440 + chapterIndex * 90);
+        };
+
+        function updateChapterVisibility(progress) {
+            // Update numeric depth indicator
+            const pct = Math.round(progress * 100);
+            depthReadout.textContent = `DEPTH ${pct}%`;
+
+            if (isCelebration) return;
+
+            // Determine which of the 4 chapters (0, 0.333, 0.666, 1.0) is closest
+            const nearestChapter = Math.round(progress * 3);
+            const distanceToChapter = Math.abs(progress * 3 - nearestChapter);
+
+            // Highlight bottom waypoint pills
+            waypointDots.forEach((dot, idx) => {
+                if (idx === nearestChapter) {
+                    dot.classList.remove('bg-white/10', 'text-rose-200');
+                    dot.classList.add('bg-rose-500', 'text-white');
+                } else {
+                    dot.classList.add('bg-white/10', 'text-rose-200');
+                    dot.classList.remove('bg-rose-500', 'text-white');
+                }
+            });
+
+            // Smoothly show the card when near a waypoint, or fade out while flying in-between
+            chapterCards.forEach((card, idx) => {
+                if (idx === nearestChapter && distanceToChapter < 0.28) {
+                    card.classList.remove('hidden');
+                    requestAnimationFrame(() => {
+                        card.classList.remove('opacity-0', 'scale-95');
+                        card.classList.add('opacity-100', 'scale-100');
+                    });
+                } else {
+                    card.classList.remove('opacity-100', 'scale-100');
+                    card.classList.add('opacity-0', 'scale-95');
+                    if (idx !== nearestChapter) {
+                        card.classList.add('hidden');
+                    }
+                }
+            });
+
+            // If we left the final proposal chapter, reset any floating "No" button back inside the card
+            if (nearestChapter !== 3 && isNoFloating) {
+                resetNoButtonPosition();
+            }
+        }
+
+        function updateAutopilotUI() {
+            if (isAutoGliding) {
+                autopilotDot.classList.remove('bg-white/40');
+                autopilotDot.classList.add('bg-emerald-400', 'animate-ping');
+            } else {
+                autopilotDot.classList.add('bg-white/40');
+                autopilotDot.classList.remove('bg-emerald-400', 'animate-ping');
+            }
+        }
+
+        function setupDeepNavigationEvents() {
+            // Mouse Wheel Z-Axis Flight
+            window.addEventListener('wheel', (e) => {
+                isAutoGliding = false;
+                updateAutopilotUI();
+                const delta = e.deltaY * 0.00045;
+                setTargetDepth(targetProgress + delta);
+            }, { passive: true });
+
+            // Range Slider Scrubbing
+            depthSlider.addEventListener('input', (e) => {
+                isAutoGliding = false;
+                updateAutopilotUI();
+                targetProgress = parseFloat(e.target.value) / 1000;
+            });
+
+            // Mouse Move Parallax & Drag-to-Fly
+            window.addEventListener('mousedown', (e) => {
+                if (e.target.closest('button') || e.target.closest('input')) return;
+                isDragging = true;
+                dragStartY = e.clientY;
+                dragStartX = e.clientX;
+            });
+
+            window.addEventListener('mouseup', () => {
+                isDragging = false;
+            });
+
+            window.addEventListener('mousemove', (e) => {
+                pointerX = (e.clientX / window.innerWidth) * 2 - 1;
+                pointerY = -(e.clientY / window.innerHeight) * 2 + 1;
+
+                if (isDragging) {
+                    const dy = dragStartY - e.clientY;
+                    setTargetDepth(targetProgress + dy * 0.0012);
+                    dragStartY = e.clientY;
+                }
+            });
+
+            // Touch Swipe to Fly Deep on Mobile
+            window.addEventListener('touchstart', (e) => {
+                if (e.target.closest('button') || e.target.closest('input')) return;
+                if (e.touches.length === 1) {
+                    isDragging = true;
+                    dragStartY = e.touches[0].clientY;
+                    dragStartX = e.touches[0].clientX;
+                }
+            }, { passive: true });
+
+            window.addEventListener('touchend', () => {
+                isDragging = false;
+            }, { passive: true });
+
+            window.addEventListener('touchmove', (e) => {
+                if (e.touches.length === 1) {
+                    const t = e.touches[0];
+                    pointerX = (t.clientX / window.innerWidth) * 2 - 1;
+                    pointerY = -(t.clientY / window.innerHeight) * 2 + 1;
+
+                    if (isDragging) {
+                        const dy = dragStartY - t.clientY;
+                        setTargetDepth(targetProgress + dy * 0.0018);
+                        dragStartY = t.clientY;
+                    }
+                }
+            }, { passive: true });
+
+            // Keyboard Up/Down Arrow Support
+            window.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+                    setTargetDepth(targetProgress + 0.06);
+                } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+                    setTargetDepth(targetProgress - 0.06);
+                }
+            });
+
+            // Auto-Glide Toggle
+            autopilotBtn.addEventListener('click', () => {
+                isAutoGliding = !isAutoGliding;
+                if (isAutoGliding && targetProgress >= 0.99) {
+                    setTargetDepth(0);
+                }
+                updateAutopilotUI();
+                sound.playSoftTick(600);
+            });
+
+            // Window Resize
+            window.addEventListener('resize', () => {
+                if (!camera || !renderer) return;
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+        }
+
+        /******************************************************************
+         * 4. UNCLICKABLE PLAYFUL "NO" BUTTON & CELEBRATION FOR NINA
+         ******************************************************************/
+        const noBtn = document.getElementById('no-btn');
+        const yesBtn = document.getElementById('yes-btn');
+        const ninaToast = document.getElementById('nina-toast');
+        const noHint = document.getElementById('no-hint');
+        const celebrationCard = document.getElementById('celebration-card');
+        const warpBurstBtn = document.getElementById('warp-burst-btn');
+        const freeFlyBtn = document.getElementById('free-fly-btn');
+        const showCardBtn = document.getElementById('show-card-btn');
+        const audioBtn = document.getElementById('audio-btn');
+
+        let noCount = 0;
+        let isNoFloating = false;
+        let toastTimer = null;
+
+        const ninaNoLabels = [
+            "Nice try, Nina 😉",
+            "Are you sure? 🥺",
+            "404: No Not Found",
+            "Locked for Nina 🔒",
+            "Only Yes works ❤️",
+            "Too slow, Nina! ✨",
+            "Click the pink one 👉"
+        ];
+
+        const ninaToastTexts = [
+            "Nice try, Nina! That button refuses to cooperate 😉❤️",
+            "Every heart in this tunnel is voting for 'Yes', Nina! ✨",
+            "Oops! The 'No' button just flew into another dimension 🚀",
+            "Look how nicely the 'Yes' button is glowing for you, Nina 💖"
+        ];
+
+        function triggerNinaToast(msg) {
+            ninaToast.textContent = msg;
+            ninaToast.classList.remove('opacity-0', '-translate-y-2');
+            ninaToast.classList.add('opacity-100', 'translate-y-0');
+            if (toastTimer) clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => {
+                ninaToast.classList.remove('opacity-100', 'translate-y-0');
+                ninaToast.classList.add('opacity-0', '-translate-y-2');
+            }, 2400);
+        }
+
+        function resetNoButtonPosition() {
+            if (!isNoFloating) return;
+            noBtn.style.position = '';
+            noBtn.style.left = '';
+            noBtn.style.top = '';
+            noBtn.style.zIndex = '';
+            document.getElementById('proposal-btn-stage').appendChild(noBtn);
+            isNoFloating = false;
+        }
+
+        function dodgeNoButton(e) {
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            if (isCelebration) return;
+
+            noCount++;
+            sound.playSoftTick(480 + (noCount % 5) * 60);
+
+            noHint.classList.remove('opacity-0');
+            noHint.classList.add('opacity-100');
+
+            noBtn.textContent = ninaNoLabels[(noCount - 1) % ninaNoLabels.length];
+            triggerNinaToast(ninaToastTexts[(noCount - 1) % ninaToastTexts.length]);
+
+            // Gently scale up the Yes button
+            const scale = Math.min(1.38, 1 + noCount * 0.06);
+            yesBtn.style.transform = `scale(${scale})`;
+
+            if (!isNoFloating) {
+                const rect = noBtn.getBoundingClientRect();
+                noBtn.style.position = 'fixed';
+                noBtn.style.left = `${rect.left}px`;
+                noBtn.style.top = `${rect.top}px`;
+                noBtn.style.zIndex = '50';
+                document.body.appendChild(noBtn);
+                isNoFloating = true;
+            }
+
+            const btnRect = noBtn.getBoundingClientRect();
+            const yesRect = yesBtn.getBoundingClientRect();
+            const pad = 24;
+            const maxX = window.innerWidth - btnRect.width - pad;
+            const maxY = window.innerHeight - btnRect.height - 80;
+
+            let nx, ny, tries = 0;
+            do {
+                nx = Math.max(pad, Math.random() * maxX);
+                ny = Math.max(80, Math.random() * maxY);
+                tries++;
+            } while (
+                tries < 25 &&
+                nx + btnRect.width > yesRect.left - 40 &&
+                nx < yesRect.right + 40 &&
+                ny + btnRect.height > yesRect.top - 40 &&
+                ny < yesRect.bottom + 40
+            );
+
+            noBtn.style.left = `${nx}px`;
+            noBtn.style.top = `${ny}px`;
+        }
+
+        noBtn.addEventListener('mouseenter', dodgeNoButton);
+        noBtn.addEventListener('touchstart', dodgeNoButton, { passive: false });
+        noBtn.addEventListener('click', dodgeNoButton);
+
+        // YES BUTTON -> Trigger Continuous Heart Vortex & Celebration
+        yesBtn.addEventListener('click', () => {
+            isCelebration = true;
+            warpSpeedMultiplier = 4.2;
+            sound.playRomanticChord();
+
+            if (isNoFloating) {
+                noBtn.style.opacity = '0';
+                noBtn.style.pointerEvents = 'none';
+            }
+
+            chapterCards.forEach(c => {
+                c.classList.add('hidden', 'opacity-0');
+            });
+
+            celebrationCard.classList.remove('hidden');
+            requestAnimationFrame(() => {
+                celebrationCard.classList.remove('opacity-0', 'scale-95');
+                celebrationCard.classList.add('opacity-100', 'scale-100');
+            });
+        });
+
+        // Pulse Heart Vortex in Celebration Mode
+        warpBurstBtn.addEventListener('click', () => {
+            sound.playRomanticChord();
+            warpSpeedMultiplier = 8.5;
+            setTimeout(() => {
+                warpSpeedMultiplier = 3.5;
+            }, 1400);
+        });
+
+        // Toggle Free 3D Space Exploration without card blocking view
+        freeFlyBtn.addEventListener('click', () => {
+            celebrationCard.classList.add('opacity-0', 'scale-95', 'pointer-events-none');
+            setTimeout(() => celebrationCard.classList.add('hidden'), 400);
+            showCardBtn.classList.remove('hidden');
+        });
+
+        showCardBtn.addEventListener('click', () => {
+            showCardBtn.classList.add('hidden');
+            celebrationCard.classList.remove('hidden', 'pointer-events-none');
+            requestAnimationFrame(() => {
+                celebrationCard.classList.remove('opacity-0', 'scale-95');
+                celebrationCard.classList.add('opacity-100', 'scale-100');
+            });
+        });
+
+        audioBtn.addEventListener('click', () => {
+            sound.enabled = !sound.enabled;
+            audioBtn.style.opacity = sound.enabled ? '1' : '0.4';
+            if (sound.enabled) sound.playSoftTick(660);
+        });
+
+        /******************************************************************
+         * 5. MAIN RENDER & ANIMATION LOOP
+         ******************************************************************/
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const elapsed = clock.getElapsedTime();
+
+            // Auto-glide smoothly advances depth if enabled
+            if (isAutoGliding && !isCelebration) {
+                targetProgress += 0.0009;
+                if (targetProgress >= 1) {
+                    targetProgress = 1;
+                    isAutoGliding = false;
+                    updateAutopilotUI();
+                }
+                depthSlider.value = Math.round(targetProgress * 1000);
+            }
+
+            // Smooth damping along the Z-axis path
+            currentProgress += (targetProgress - currentProgress) * 0.065;
+            updateChapterVisibility(currentProgress);
+
+            // Compute Camera Position & LookAt along the 3D spline
+            const camPos = getCameraPathPosition(currentProgress);
+            const lookAheadT = Math.min(1.05, currentProgress + 0.06);
+            const lookAtPos = getCameraPathPosition(lookAheadT);
+
+            camera.position.x = camPos.x + pointerX * 1.1;
+            camera.position.y = camPos.y + pointerY * 0.8;
+            camera.position.z = camPos.z;
+
+            camera.lookAt(
+                lookAtPos.x + pointerX * 0.5,
+                lookAtPos.y + pointerY * 0.4,
+                lookAtPos.z - 8
+            );
+
+            // Animate all 320 3D Hearts in the Deep Tunnel
+            tunnelHearts.forEach((h) => {
+                h.mesh.rotation.y += h.rotSpeedY * warpSpeedMultiplier;
+                h.mesh.rotation.z += h.rotSpeedZ;
+
+                // Gentle vertical float
+                h.mesh.position.y = h.baseY + Math.sin(elapsed * h.bobSpeed + h.bobOffset) * 0.35;
+
+                // During celebration, stream the hearts toward & past the camera like a romantic warp tunnel
+                if (isCelebration) {
+                    h.mesh.position.z += 0.16 * warpSpeedMultiplier;
+                    if (h.mesh.position.z > camera.position.z + 8) {
+                        h.mesh.position.z = camera.position.z - 140;
+                    }
+                }
+            });
+
+            // Animate Centerpiece Sanctuary Heart at the End of the Tunnel
+            if (mainSanctuaryHeart && sanctuaryGroup) {
+                const beat = Math.pow(Math.sin(elapsed * (isCelebration ? 4.2 : 2.6)), 6) * 0.15;
+                const s = (isCelebration ? 1.25 : 1.0) + beat;
+                mainSanctuaryHeart.scale.set(s, s, s);
+                sanctuaryHalo.scale.set(s * 1.12, s * 1.12, s * 1.12);
+
+                sanctuaryGroup.rotation.y = elapsed * (isCelebration ? 1.2 : 0.45) + pointerX * 0.4;
+                sanctuaryGroup.rotation.x = pointerY * 0.25;
+            }
+
+            // Decay warp burst multiplier smoothly
+            if (isCelebration && warpSpeedMultiplier > 2.8) {
+                warpSpeedMultiplier += (2.8 - warpSpeedMultiplier) * 0.03;
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        window.onload = function () {
+            init3DUniverse();
+            animate();
+        };
+    </script>
+</body>
+</html>
