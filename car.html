@@ -1,0 +1,1926 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Jaguar F-Type · Nina Edition ❤️</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Three.js r128 + OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <!-- GSAP for Smooth Camera & Mechanical Transitions -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: radial-gradient(circle at 50% 35%, #190714 0%, #090309 65%, #030104 100%);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            color: #fff;
+            touch-action: none;
+        }
+
+        .font-luxury {
+            font-family: 'Cormorant Garamond', serif;
+        }
+
+        .font-telemetry {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        #canvas-container {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        /* Automotive Showroom Glassmorphism */
+        .luxury-glass {
+            background: linear-gradient(145deg, rgba(24, 9, 20, 0.78) 0%, rgba(10, 3, 9, 0.88) 100%);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(251, 113, 133, 0.25);
+            box-shadow: 
+                0 25px 60px -15px rgba(0, 0, 0, 0.85),
+                0 0 35px -8px rgba(244, 63, 94, 0.28),
+                inset 0 1px 0 rgba(255, 255, 255, 0.16);
+        }
+
+        .hud-pill {
+            background: rgba(18, 6, 15, 0.72);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+        }
+
+        /* 3D Floating Hotspot Pins projected onto screen */
+        .car-hotspot {
+            position: fixed;
+            z-index: 15;
+            transform: translate(-50%, -50%);
+            pointer-events: auto;
+            cursor: pointer;
+            transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.25s ease;
+        }
+
+        .car-hotspot:hover {
+            transform: translate(-50%, -50%) scale(1.18);
+        }
+
+        .car-hotspot.visited .pin-core {
+            background: linear-gradient(135deg, #10b981, #059669);
+            border-color: #a7f3d0;
+        }
+
+        .pin-ring {
+            position: absolute;
+            inset: -6px;
+            border-radius: 9999px;
+            border: 1.5px solid rgba(251, 113, 133, 0.75);
+            animation: pulseRing 2.2s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+        }
+
+        @keyframes pulseRing {
+            0% { transform: scale(0.8); opacity: 0.95; }
+            100% { transform: scale(1.75); opacity: 0; }
+        }
+
+        /* Primary Rose Gold / Ruby Button */
+        .btn-jaguar {
+            background: linear-gradient(135deg, #f43f5e 0%, #e11d48 55%, #9f1239 100%);
+            box-shadow: 
+                0 12px 28px -6px rgba(225, 29, 72, 0.65),
+                inset 0 1px 1px rgba(255, 255, 255, 0.4);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .btn-jaguar:hover {
+            box-shadow: 
+                0 16px 36px -4px rgba(244, 63, 94, 0.85),
+                0 0 25px rgba(251, 191, 36, 0.45),
+                inset 0 1px 2px rgba(255, 255, 255, 0.55);
+            transform: translateY(-2px);
+        }
+
+        /* Paint Swatch Button */
+        .paint-swatch {
+            width: 22px;
+            height: 22px;
+            border-radius: 9999px;
+            border: 2px solid rgba(255, 255, 255, 0.35);
+            cursor: pointer;
+            transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .paint-swatch:hover, .paint-swatch.active {
+            transform: scale(1.22);
+            border-color: #fff;
+            box-shadow: 0 0 12px rgba(251, 113, 133, 0.8);
+        }
+
+        /* Dodging No Button */
+        #no-btn {
+            transition: left 0.28s cubic-bezier(0.34, 1.56, 0.64, 1),
+                        top 0.28s cubic-bezier(0.34, 1.56, 0.64, 1),
+                        transform 0.2s ease;
+        }
+
+        /* Hide scrollbars on mobile part bar */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 3D Showroom Canvas -->
+    <div id="canvas-container"></div>
+
+    <!-- 2D Projected 3D Hotspot Pins Container -->
+    <div id="hotspots-layer" class="fixed inset-0 pointer-events-none z-10"></div>
+
+    <!-- TOP SHOWROOM HUD BAR -->
+    <header class="fixed top-0 left-0 right-0 z-30 flex flex-wrap items-center justify-between gap-2 px-4 sm:px-6 py-3.5 pointer-events-none">
+        <!-- Brand & Nina Edition Badge -->
+        <div class="hud-pill px-4 py-2 rounded-full flex items-center gap-3 pointer-events-auto shadow-lg">
+            <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping"></span>
+                <span class="font-telemetry text-xs font-semibold tracking-widest uppercase text-rose-200">JAGUAR F-TYPE R</span>
+            </div>
+            <span class="text-white/25">|</span>
+            <span class="text-xs font-medium text-amber-200/90 tracking-wide">NINA 1-OF-1 EDITION ❤️</span>
+        </div>
+
+        <!-- Paint Customizer & Controls -->
+        <div class="flex items-center gap-2.5 pointer-events-auto">
+            <!-- Metallic Paint Selector -->
+            <div class="hud-pill px-3 py-1.5 rounded-full flex items-center gap-2" title="Customize Nina's Jaguar Paint">
+                <span class="text-[11px] text-rose-200/75 hidden md:inline mr-1">Paint:</span>
+                <button onclick="setCarPaint('crimson', this)" class="paint-swatch active" style="background: radial-gradient(circle at 30% 30%, #fb7185, #881337);" title="Midnight Rose Metallic"></button>
+                <button onclick="setCarPaint('emerald', this)" class="paint-swatch" style="background: radial-gradient(circle at 30% 30%, #34d399, #064e3b);" title="British Racing Emerald"></button>
+                <button onclick="setCarPaint('obsidian', this)" class="paint-swatch" style="background: radial-gradient(circle at 30% 30%, #52525b, #09090b);" title="Obsidian Black Gold"></button>
+                <button onclick="setCarPaint('pearl', this)" class="paint-swatch" style="background: radial-gradient(circle at 30% 30%, #fff1f2, #fda4af);" title="Pearl White Rose"></button>
+            </div>
+
+            <!-- Reset Camera View -->
+            <button id="reset-cam-btn" class="hud-pill px-3.5 py-2 rounded-full text-xs text-rose-100 hover:bg-white/10 transition flex items-center gap-1.5 cursor-pointer">
+                <span>Full Orbit</span>
+            </button>
+
+            <!-- Audio Toggle -->
+            <button id="audio-toggle-btn" class="hud-pill p-2 rounded-full text-rose-200 hover:text-white hover:bg-white/10 transition cursor-pointer" title="Toggle V8 & Romantic Chimes">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <!-- Playful Floating Toast for "No" Button Evasion -->
+    <div id="tease-toast" class="fixed top-20 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 -translate-y-2 transition-all duration-300 luxury-glass px-5 py-2.5 rounded-full text-xs sm:text-sm text-rose-100 font-medium shadow-2xl whitespace-nowrap">
+        Brakes Disconnected, Nina! Only YES works 😉🏎️
+    </div>
+
+    <!-- ACTIVE PART MESSAGE CARD (Left/Right Responsive Overlay) -->
+    <aside id="part-info-card" class="fixed top-20 right-4 sm:right-6 z-20 w-[calc(100%-2rem)] sm:w-96 luxury-glass rounded-3xl p-5 sm:p-6 transition-all duration-500 opacity-0 translate-x-8 pointer-events-none">
+        <div class="flex items-center justify-between gap-2 mb-2">
+            <span id="part-badge" class="font-telemetry text-[11px] uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-rose-500/20 border border-rose-400/30 text-rose-300">
+                PART 01 / 05
+            </span>
+            <button id="close-part-btn" class="text-rose-200/60 hover:text-white text-xs px-2 py-1 rounded-lg hover:bg-white/10 transition cursor-pointer">
+                ✕ Close
+            </button>
+        </div>
+
+        <h2 id="part-title" class="font-luxury text-2xl sm:text-3xl font-bold text-white leading-tight mb-2">
+            Powered By My Heartbeat For Nina
+        </h2>
+
+        <p id="part-message" class="text-xs sm:text-sm text-rose-100/85 leading-relaxed mb-4">
+            Under this sculpted Jaguar clamshell hood beats a custom V8 heart core that races every single time you are near me, Nina.
+        </p>
+
+        <!-- Telemetry Spec Bar -->
+        <div class="grid grid-cols-2 gap-2 pt-3 border-t border-white/10 text-[11px] mb-4">
+            <div class="bg-white/5 rounded-xl p-2">
+                <span class="text-rose-300/60 block">TELEMETRY</span>
+                <span id="part-spec-1" class="font-telemetry text-white font-semibold">∞ BPM FOR NINA</span>
+            </div>
+            <div class="bg-white/5 rounded-xl p-2">
+                <span class="text-rose-300/60 block">STATUS</span>
+                <span id="part-spec-2" class="font-telemetry text-amber-300 font-semibold">TWIN-TURBO LOVE</span>
+            </div>
+        </div>
+
+        <div class="flex items-center justify-between gap-2">
+            <button id="next-part-btn" class="btn-jaguar w-full py-2.5 px-4 rounded-xl text-xs sm:text-sm font-semibold text-white flex items-center justify-center gap-2 cursor-pointer">
+                <span>Inspect Next Part</span>
+                <span>→</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- FINAL PROPOSAL MODAL (Unlocked on Trunk Surprise or via Direct Button) -->
+    <div id="proposal-modal" class="fixed inset-0 z-40 flex items-center justify-center p-4 bg-black/55 backdrop-blur-md opacity-0 pointer-events-none transition-opacity duration-500">
+        <!-- QUESTION VIEW -->
+        <div id="proposal-question-box" class="luxury-glass w-full max-w-md rounded-3xl p-6 sm:p-8 text-center relative">
+            <button id="minimize-modal-btn" class="absolute top-4 right-4 text-rose-200/60 hover:text-white text-xs px-2.5 py-1 rounded-full bg-white/5 hover:bg-white/15 transition cursor-pointer">
+                Back to Car
+            </button>
+
+            <div class="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-rose-500/20 border border-rose-400/35 text-rose-200 text-[11px] font-telemetry uppercase tracking-widest mb-3">
+                <span>🏎️ Co-Pilot Forever</span>
+            </div>
+
+            <h2 class="font-luxury text-4xl sm:text-5xl font-bold text-white leading-tight mb-3">
+                Nina, will you be my girl? ❤️
+            </h2>
+
+            <p class="text-xs sm:text-sm text-rose-100/85 leading-relaxed mb-6">
+                Every part of this Jaguar—and every single part of my heart—was built for you, Nina. Take the passenger seat next to me and ride with me forever?
+            </p>
+
+            <!-- Yes / No Stage -->
+            <div id="proposal-btn-stage" class="relative flex flex-wrap items-center justify-center gap-3.5 min-h-[60px]">
+                <button id="yes-btn" class="btn-jaguar relative z-20 px-8 py-3.5 rounded-2xl text-sm sm:text-base font-bold text-white tracking-wide flex items-center gap-2 cursor-pointer">
+                    <span>Yes, I'm Yours!</span>
+                    <span>❤️🏎️</span>
+                </button>
+
+                <button id="no-btn" type="button" class="hud-pill px-6 py-3.5 rounded-2xl text-xs sm:text-sm font-medium text-rose-200 hover:text-white cursor-pointer">
+                    No
+                </button>
+            </div>
+
+            <p id="no-hint-text" class="text-[11px] text-rose-300/70 mt-3 h-4 opacity-0 transition-opacity duration-300">
+                Jaguar Traction Control has locked out the "No" pedal 🏹
+            </p>
+        </div>
+
+        <!-- CELEBRATION HYPERDRIVE VIEW -->
+        <div id="proposal-celebration-box" class="luxury-glass w-full max-w-md rounded-3xl p-6 sm:p-8 text-center hidden">
+            <div class="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-amber-400/20 border border-amber-300/40 text-amber-200 text-[11px] font-telemetry uppercase tracking-widest mb-3">
+                <span>🔥 HYPERDRIVE LOVE MODE ENGAGED 🔥</span>
+            </div>
+
+            <h2 class="font-luxury text-4xl sm:text-5xl font-bold text-white leading-tight mb-3">
+                Forever Ride or Die, <span class="italic text-rose-400">Nina</span>! ❤️
+            </h2>
+
+            <p class="text-xs sm:text-sm text-rose-100/90 leading-relaxed mb-6">
+                You just made me the happiest guy alive, Nina! Buckle up—our greatest adventure together starts right now. ✨
+            </p>
+
+            <div class="flex flex-wrap items-center justify-center gap-3">
+                <button id="rev-engine-btn" class="btn-jaguar px-6 py-3 rounded-2xl text-xs sm:text-sm font-semibold text-white flex items-center gap-2 cursor-pointer">
+                    <span>Rev V8 & Shoot Hearts</span>
+                    <span>💖🔥</span>
+                </button>
+
+                <button id="admire-jaguar-btn" class="hud-pill px-5 py-3 rounded-2xl text-xs sm:text-sm font-medium text-rose-100 hover:bg-white/15 transition cursor-pointer">
+                    Admire Our Jaguar in 3D
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- BOTTOM INTERACTIVE CAR PART DOCK -->
+    <footer class="fixed bottom-3 left-1/2 -translate-x-1/2 z-30 w-[96%] max-w-3xl pointer-events-auto">
+        <div class="luxury-glass rounded-2xl p-2 sm:p-2.5 flex flex-col gap-2">
+            <!-- Helper Prompt & Final Question Trigger -->
+            <div class="flex items-center justify-between px-2 text-[11px] text-rose-200/80">
+                <span class="truncate">Click any part on the 3D Jaguar or select below to reveal Nina's messages:</span>
+                <button id="open-proposal-direct-btn" class="font-telemetry text-[11px] font-semibold text-amber-300 hover:text-amber-200 underline underline-offset-2 ml-2 shrink-0 cursor-pointer">
+                    Ask Nina ❤️
+                </button>
+            </div>
+
+            <!-- 5 Interactive Jaguar Part Buttons -->
+            <div class="grid grid-cols-5 gap-1.5 sm:gap-2 no-scrollbar overflow-x-auto">
+                <button onclick="selectCarPart(0)" data-part-btn="0" class="part-dock-btn hud-pill py-2 px-2 rounded-xl text-center hover:bg-rose-500/20 hover:border-rose-400/40 transition flex flex-col items-center gap-0.5 cursor-pointer">
+                    <span class="font-telemetry text-[10px] text-rose-300">01 · HOOD</span>
+                    <span class="text-[11px] sm:text-xs font-semibold text-white truncate w-full">V8 Heart</span>
+                </button>
+
+                <button onclick="selectCarPart(1)" data-part-btn="1" class="part-dock-btn hud-pill py-2 px-2 rounded-xl text-center hover:bg-rose-500/20 hover:border-rose-400/40 transition flex flex-col items-center gap-0.5 cursor-pointer">
+                    <span class="font-telemetry text-[10px] text-rose-300">02 · LIGHTS</span>
+                    <span class="text-[11px] sm:text-xs font-semibold text-white truncate w-full">J-Blade LED</span>
+                </button>
+
+                <button onclick="selectCarPart(2)" data-part-btn="2" class="part-dock-btn hud-pill py-2 px-2 rounded-xl text-center hover:bg-rose-500/20 hover:border-rose-400/40 transition flex flex-col items-center gap-0.5 cursor-pointer">
+                    <span class="font-telemetry text-[10px] text-rose-300">03 · DOOR</span>
+                    <span class="text-[11px] sm:text-xs font-semibold text-white truncate w-full">Nina's Seat</span>
+                </button>
+
+                <button onclick="selectCarPart(3)" data-part-btn="3" class="part-dock-btn hud-pill py-2 px-2 rounded-xl text-center hover:bg-rose-500/20 hover:border-rose-400/40 transition flex flex-col items-center gap-0.5 cursor-pointer">
+                    <span class="font-telemetry text-[10px] text-rose-300">04 · RIMS</span>
+                    <span class="text-[11px] sm:text-xs font-semibold text-white truncate w-full">Forged Alloy</span>
+                </button>
+
+                <button onclick="selectCarPart(4)" data-part-btn="4" class="part-dock-btn hud-pill py-2 px-2 rounded-xl text-center hover:bg-rose-500/20 hover:border-rose-400/40 transition flex flex-col items-center gap-0.5 cursor-pointer border-amber-400/30">
+                    <span class="font-telemetry text-[10px] text-amber-300">05 · REAR</span>
+                    <span class="text-[11px] sm:text-xs font-semibold text-amber-200 truncate w-full">Surprise ❤️</span>
+                </button>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        /*************************************************************************
+         * 1. AUTOMOTIVE V8 & ROMANTIC CHIME SYNTHESIZER (Web Audio API)
+         *************************************************************************/
+        class JaguarSoundSystem {
+            constructor() {
+                this.ctx = null;
+                this.enabled = true;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    if (AudioCtx) this.ctx = new AudioCtx();
+                }
+                if (this.ctx && this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            }
+
+            // Synthesize a deep Jaguar V8 Supercharged throttle blip
+            playV8Rev() {
+                if (!this.enabled) return;
+                try {
+                    this.init();
+                    if (!this.ctx) return;
+
+                    const now = this.ctx.currentTime;
+                    const osc1 = this.ctx.createOscillator();
+                    const osc2 = this.ctx.createOscillator();
+                    const filter = this.ctx.createBiquadFilter();
+                    const gain = this.ctx.createGain();
+
+                    osc1.type = 'sawtooth';
+                    osc2.type = 'triangle';
+
+                    // V8 rumble harmonic frequencies
+                    osc1.frequency.setValueAtTime(58, now);
+                    osc1.frequency.exponentialRampToValueAtTime(165, now + 0.35);
+                    osc1.frequency.exponentialRampToValueAtTime(68, now + 0.95);
+
+                    osc2.frequency.setValueAtTime(87, now);
+                    osc2.frequency.exponentialRampToValueAtTime(248, now + 0.35);
+                    osc2.frequency.exponentialRampToValueAtTime(102, now + 0.95);
+
+                    filter.type = 'lowpass';
+                    filter.frequency.setValueAtTime(420, now);
+                    filter.frequency.linearRampToValueAtTime(1100, now + 0.35);
+                    filter.frequency.linearRampToValueAtTime(380, now + 0.95);
+
+                    gain.gain.setValueAtTime(0.001, now);
+                    gain.gain.linearRampToValueAtTime(0.14, now + 0.12);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 1.0);
+
+                    osc1.connect(filter);
+                    osc2.connect(filter);
+                    filter.connect(gain);
+                    gain.connect(this.ctx.destination);
+
+                    osc1.start(now);
+                    osc2.start(now);
+                    osc1.stop(now + 1.02);
+                    osc2.stop(now + 1.02);
+                } catch (e) {}
+            }
+
+            // Soft luxury chime when clicking car parts
+            playPartChime(pitch = 520) {
+                if (!this.enabled) return;
+                try {
+                    this.init();
+                    if (!this.ctx) return;
+
+                    const now = this.ctx.currentTime;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(pitch, now);
+                    osc.frequency.exponentialRampToValueAtTime(pitch * 1.4, now + 0.16);
+
+                    gain.gain.setValueAtTime(0.08, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.23);
+                } catch (e) {}
+            }
+
+            // Dreamy celebration chord + V8 purr when Lylia clicks YES
+            playCelebrationSymphony() {
+                if (!this.enabled) return;
+                this.playV8Rev();
+                try {
+                    this.init();
+                    if (!this.ctx) return;
+
+                    const notes = [329.63, 415.30, 493.88, 622.25, 739.99, 987.77]; // E Major 9th
+                    notes.forEach((freq, idx) => {
+                        const now = this.ctx.currentTime + 0.15 + idx * 0.08;
+                        const osc = this.ctx.createOscillator();
+                        const gain = this.ctx.createGain();
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(freq, now);
+
+                        gain.gain.setValueAtTime(0.001, now);
+                        gain.gain.linearRampToValueAtTime(0.11, now + 0.04);
+                        gain.gain.exponentialRampToValueAtTime(0.0008, now + 2.0);
+
+                        osc.connect(gain);
+                        gain.connect(this.ctx.destination);
+                        osc.start(now);
+                        osc.stop(now + 2.05);
+                    });
+                } catch (e) {}
+            }
+        }
+
+        const audio = new JaguarSoundSystem();
+
+        /*************************************************************************
+         * 2. JAGUAR F-TYPE PARTS DATA & PERSONALIZED MESSAGES FOR NINA
+         *************************************************************************/
+        const JAGUAR_PARTS = [
+            {
+                id: 'hood',
+                number: '01',
+                label: 'V8 Heart Core',
+                title: 'Powered By My Heartbeat For Nina',
+                message: 'Under this sculpted Jaguar clamshell hood beats a glowing 3D heart core. Just like a supercharged V8, my heart races uncontrollably every single time I see your smile, Nina.',
+                spec1: '∞ BPM FOR NINA',
+                spec2: '575 HP OF PURE LOVE',
+                hotspot3D: new THREE.Vector3(0, 1.08, 1.38),
+                camPos: new THREE.Vector3(1.65, 2.15, 3.25),
+                camTarget: new THREE.Vector3(0, 0.85, 1.25)
+            },
+            {
+                id: 'headlights',
+                number: '02',
+                label: 'J-Blade Eyes',
+                title: 'Nina, My Guiding Light In Every Night',
+                message: 'They call these Jaguar "J-Blade" pixel headlights, Nina—but nothing in this world shines brighter or guides me home faster than the sparkle in your eyes.',
+                spec1: '100% BRIGHTER WITH YOU',
+                spec2: 'J-BLADE CRYSTAL LED',
+                hotspot3D: new THREE.Vector3(0.78, 0.82, 2.02),
+                camPos: new THREE.Vector3(2.15, 1.25, 3.65),
+                camTarget: new THREE.Vector3(0.35, 0.72, 1.75)
+            },
+            {
+                id: 'door',
+                number: '03',
+                label: "Nina's VIP Door",
+                title: 'Passenger Seat Reserved Forever For Queen Nina',
+                message: 'Step inside, Nina. The VIP passenger seat of this Jaguar—and the passenger seat of my entire life—is reserved strictly and exclusively for you forever.',
+                spec1: 'PASSENGER: QUEEN NINA',
+                spec2: 'SWAN-WING VIP ACCESS',
+                hotspot3D: new THREE.Vector3(-1.05, 0.96, 0.15),
+                camPos: new THREE.Vector3(-3.35, 1.65, 1.45),
+                camTarget: new THREE.Vector3(-0.35, 0.85, -0.05)
+            },
+            {
+                id: 'rims',
+                number: '04',
+                label: 'Forged Alloy Rims',
+                title: "I'd Drive A Million Miles Just To See Nina Smile",
+                message: 'No road is too far and no destination is out of reach as long as it means being with you, Nina. I would drive across the whole universe just to hold your hand.',
+                spec1: 'RANGE: UNLIMITED MILES',
+                spec2: '21" ROSE-GOLD FORGED',
+                hotspot3D: new THREE.Vector3(1.02, 0.44, 1.42),
+                camPos: new THREE.Vector3(2.65, 0.78, 1.95),
+                camTarget: new THREE.Vector3(0.75, 0.44, 1.38)
+            },
+            {
+                id: 'trunk',
+                number: '05',
+                label: 'Rear Wing Surprise',
+                title: 'One Final Question In The Trunk ❤️',
+                message: 'With the active aerodynamic wing deployed and quad exhausts glowing with hearts, there is only one thing left to ask you, Nina...',
+                spec1: 'SPOILER: DEPLOYED',
+                spec2: 'PROPOSAL UNLOCKED ❤️',
+                hotspot3D: new THREE.Vector3(0, 1.15, -2.05),
+                camPos: new THREE.Vector3(-2.15, 1.75, -3.75),
+                camTarget: new THREE.Vector3(0, 0.85, -1.55)
+            }
+        ];
+
+        /*************************************************************************
+         * 3. REALISTIC 3D JAGUAR F-TYPE COUPE MODEL ENGINEERING (Three.js)
+         *************************************************************************/
+        let scene, camera, renderer, controls, raycaster, mouseVec;
+        let jaguarRoot, bodyPaintMaterial, caliperMaterial, rimAccentMaterial;
+        let heartEngineMesh, hoodPanelGroup, leftDoorPivotGroup, activeSpoilerGroup;
+        let wheelGroups = [];
+        let headlightBeamLeft, headlightBeamRight, jBladeMat;
+        let exhaustHeartParticles = [];
+        let hyperdriveLines = [];
+        let clickableMeshes = [];
+
+        // Interactive Mechanical States
+        let isDoorOpen = false;
+        let isHoodOpen = false;
+        let isSpoilerUp = false;
+        let areHighBeamsOn = false;
+        let wheelSpinBoost = 0.015;
+        let isHyperdrive = false;
+        let visitedParts = new Set();
+        let currentPartIndex = -1;
+
+        // Paint Presets (Clearcoat Metallic Automotive Shaders)
+        const PAINT_PRESETS = {
+            crimson: { color: 0x9f1239, emissive: 0x1f030b, roughness: 0.14, metalness: 0.85 },
+            emerald: { color: 0x065f46, emissive: 0x021710, roughness: 0.15, metalness: 0.84 },
+            obsidian: { color: 0x141417, emissive: 0x050507, roughness: 0.10, metalness: 0.92 },
+            pearl:   { color: 0xffe4e6, emissive: 0x260b12, roughness: 0.12, metalness: 0.65 }
+        };
+
+        // Generate a Procedural Automotive Studio Environment Map (Softboxes + Rim Lights)
+        function createStudioEnvironmentMap(rendererInstance) {
+            const pmremGenerator = new THREE.PMREMGenerator(rendererInstance);
+            pmremGenerator.compileCubemapShader();
+
+            const envScene = new THREE.Scene();
+            envScene.background = new THREE.Color(0x0b0309);
+
+            // Overhead Bright Studio Softbox Strip
+            const topSoftbox = new THREE.Mesh(
+                new THREE.PlaneGeometry(36, 12),
+                new THREE.MeshBasicMaterial({ color: 0xfff1f2, side: THREE.DoubleSide })
+            );
+            topSoftbox.position.set(0, 15, 0);
+            topSoftbox.rotation.x = Math.PI / 2;
+            envScene.add(topSoftbox);
+
+            // Left & Right Warm Rose Lateral Softbox Strips (creates signature side body line reflections)
+            const sideStripMat = new THREE.MeshBasicMaterial({ color: 0xfda4af, side: THREE.DoubleSide });
+            const leftStrip = new THREE.Mesh(new THREE.PlaneGeometry(34, 4), sideStripMat);
+            leftStrip.position.set(-14, 4, 0);
+            leftStrip.rotation.y = Math.PI / 2;
+            envScene.add(leftStrip);
+
+            const rightStrip = new THREE.Mesh(new THREE.PlaneGeometry(34, 4), sideStripMat);
+            rightStrip.position.set(14, 4, 0);
+            rightStrip.rotation.y = -Math.PI / 2;
+            envScene.add(rightStrip);
+
+            // Front & Rear Gold Highlight Panels
+            const frontStrip = new THREE.Mesh(
+                new THREE.PlaneGeometry(18, 5),
+                new THREE.MeshBasicMaterial({ color: 0xfde68a, side: THREE.DoubleSide })
+            );
+            frontStrip.position.set(0, 6, 18);
+            envScene.add(frontStrip);
+
+            const envMap = pmremGenerator.fromScene(envScene, 0.035).texture;
+            pmremGenerator.dispose();
+            return envMap;
+        }
+
+        // Helper for 2D Beveled Heart Geometry
+        function createHeartShape() {
+            const s = new THREE.Shape();
+            s.moveTo(0, 0.35);
+            s.bezierCurveTo(0, 0.35, -0.08, 0.82, -0.58, 0.82);
+            s.bezierCurveTo(-1.22, 0.82, -1.22, 0.05, -1.22, 0.05);
+            s.bezierCurveTo(-1.22, -0.52, -0.68, -1.02, 0, -1.45);
+            s.bezierCurveTo(0.68, -1.02, 1.22, -0.52, 1.22, 0.05);
+            s.bezierCurveTo(1.22, 0.05, 1.22, 0.82, 0.58, 0.82);
+            s.bezierCurveTo(0.08, 0.82, 0, 0.35, 0, 0.35);
+            return s;
+        }
+
+        function initShowroom() {
+            const container = document.getElementById('canvas-container');
+
+            scene = new THREE.Scene();
+            scene.fog = new THREE.FogExp2(0x090309, 0.025);
+
+            camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 200);
+            camera.position.set(4.1, 2.05, 4.6);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.22;
+            container.appendChild(renderer.domElement);
+
+            // Apply Studio Environment Map for Realistic Automotive Clearcoat Reflections
+            const studioEnv = createStudioEnvironmentMap(renderer);
+            scene.environment = studioEnv;
+
+            // OrbitControls
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.055;
+            controls.maxPolarAngle = Math.PI / 2 - 0.03; // Never clip below showroom floor
+            controls.minDistance = 2.3;
+            controls.maxDistance = 10.5;
+            controls.target.set(0, 0.65, 0);
+
+            raycaster = new THREE.Raycaster();
+            mouseVec = new THREE.Vector2();
+
+            // Showroom Lighting
+            const ambientLight = new THREE.AmbientLight(0xffe4e6, 0.65);
+            scene.add(ambientLight);
+
+            const mainSpot = new THREE.SpotLight(0xfff1f2, 2.8);
+            mainSpot.position.set(5, 9, 6);
+            mainSpot.angle = Math.PI / 3;
+            mainSpot.penumbra = 0.65;
+            mainSpot.castShadow = true;
+            mainSpot.shadow.mapSize.width = 2048;
+            mainSpot.shadow.mapSize.height = 2048;
+            scene.add(mainSpot);
+
+            const rimSpot = new THREE.SpotLight(0xf43f5e, 2.4);
+            rimSpot.position.set(-6, 5, -6);
+            rimSpot.angle = Math.PI / 3;
+            rimSpot.penumbra = 0.8;
+            scene.add(rimSpot);
+
+            const underglowLight = new THREE.PointLight(0xe11d48, 1.8, 7);
+            underglowLight.position.set(0, 0.12, 0);
+            scene.add(underglowLight);
+
+            // Luxury Showroom Pedestal & Overhead LED Halo Ring
+            buildShowroomStage();
+
+            // Sculpt the Realistic Jaguar F-Type R Coupe
+            buildJaguarFTypeCoupe();
+
+            // Build Hyperdrive Speed Tunnel Lines (Initially subtle)
+            buildHyperdriveSpeedLines();
+
+            // Create DOM Hotspot Pins
+            initHotspotPins();
+
+            // Bind Interaction Listeners
+            setupInteractionEvents();
+        }
+
+        function buildShowroomStage() {
+            // Glossy Dark Showroom Floor
+            const floorGeo = new THREE.CircleGeometry(28, 64);
+            const floorMat = new THREE.MeshStandardMaterial({
+                color: 0x090408,
+                roughness: 0.18,
+                metalness: 0.75
+            });
+            const floor = new THREE.Mesh(floorGeo, floorMat);
+            floor.rotation.x = -Math.PI / 2;
+            floor.receiveShadow = true;
+            scene.add(floor);
+
+            // Turntable Ring Under the Jaguar
+            const ringGeo = new THREE.RingGeometry(2.65, 2.72, 96);
+            const ringMat = new THREE.MeshBasicMaterial({
+                color: 0xf43f5e,
+                side: THREE.DoubleSide,
+                transparent: true,
+                opacity: 0.65
+            });
+            const turntableRing = new THREE.Mesh(ringGeo, ringMat);
+            turntableRing.rotation.x = -Math.PI / 2;
+            turntableRing.position.y = 0.005;
+            scene.add(turntableRing);
+
+            // Overhead Showroom Halo Light Ring
+            const ceilingRingGeo = new THREE.TorusGeometry(3.8, 0.045, 16, 100);
+            const ceilingRingMat = new THREE.MeshBasicMaterial({ color: 0xffe4e6 });
+            const ceilingRing = new THREE.Mesh(ceilingRingGeo, ceilingRingMat);
+            ceilingRing.rotation.x = Math.PI / 2;
+            ceilingRing.position.y = 4.2;
+            scene.add(ceilingRing);
+        }
+
+        // Helper to tag any mesh so clicking it triggers the corresponding Jaguar part
+        function registerPartMesh(mesh, partIndex) {
+            mesh.userData.partIndex = partIndex;
+            clickableMeshes.push(mesh);
+        }
+
+        function buildJaguarFTypeCoupe() {
+            jaguarRoot = new THREE.Group();
+            scene.add(jaguarRoot);
+
+            // Shared Automotive Materials
+            bodyPaintMaterial = new THREE.MeshPhysicalMaterial({
+                color: PAINT_PRESETS.crimson.color,
+                emissive: PAINT_PRESETS.crimson.emissive,
+                metalness: PAINT_PRESETS.crimson.metalness,
+                roughness: PAINT_PRESETS.crimson.roughness,
+                clearcoat: 1.0,
+                clearcoatRoughness: 0.04,
+                reflectivity: 1.0
+            });
+
+            const carbonFiberMat = new THREE.MeshStandardMaterial({
+                color: 0x16161a,
+                roughness: 0.32,
+                metalness: 0.55
+            });
+
+            const pianoBlackMat = new THREE.MeshPhysicalMaterial({
+                color: 0x070709,
+                roughness: 0.08,
+                metalness: 0.8,
+                clearcoat: 1.0
+            });
+
+            const tintedGlassMat = new THREE.MeshPhysicalMaterial({
+                color: 0x120914,
+                metalness: 0.15,
+                roughness: 0.05,
+                transparent: true,
+                opacity: 0.68,
+                clearcoat: 1.0
+            });
+
+            const roseGoldChromeMat = new THREE.MeshStandardMaterial({
+                color: 0xfda4af,
+                roughness: 0.15,
+                metalness: 0.95
+            });
+            rimAccentMaterial = roseGoldChromeMat;
+
+            caliperMaterial = new THREE.MeshStandardMaterial({
+                color: 0xf43f5e,
+                roughness: 0.25,
+                metalness: 0.6
+            });
+
+            // ------------------------------------------------------------------
+            // A. SCULPTED AERODYNAMIC F-TYPE CENTRAL BODY FUSELAGE (Side Profile Extrusion)
+            // ------------------------------------------------------------------
+            const sideProfile = new THREE.Shape();
+            // Coordinate system: X = Z_car (-2.18 rear to +2.22 front nose), Y = height
+            sideProfile.moveTo(-2.15, 0.28);
+            sideProfile.quadraticCurveTo(-2.22, 0.60, -2.05, 0.84); // Tapered F-Type rear tail
+            sideProfile.quadraticCurveTo(-1.55, 0.95, -0.95, 0.94); // Rear decklid
+            sideProfile.lineTo(0.45, 0.92);                         // Beltline waist
+            sideProfile.quadraticCurveTo(1.35, 0.90, 2.02, 0.68);   // Long clamshell hood slope
+            sideProfile.quadraticCurveTo(2.24, 0.54, 2.18, 0.24);   // Shark-nose front grille drop
+            sideProfile.lineTo(1.85, 0.20);                         // Front chin splitter
+            sideProfile.lineTo(-1.95, 0.22);                        // Lower rocker panel
+            sideProfile.closePath();
+
+            const centerCoreGeo = new THREE.ExtrudeGeometry(sideProfile, {
+                depth: 1.32,
+                bevelEnabled: true,
+                bevelSegments: 10,
+                steps: 2,
+                bevelSize: 0.18,
+                bevelThickness: 0.22
+            });
+            centerCoreGeo.center();
+            // Rotate so X of shape aligns with Z of car (+Z is front, -Z is rear)
+            centerCoreGeo.rotateY(Math.PI / 2);
+
+            const centerBodyMesh = new THREE.Mesh(centerCoreGeo, bodyPaintMaterial);
+            centerBodyMesh.position.set(0, 0.56, 0.02);
+            centerBodyMesh.castShadow = true;
+            centerBodyMesh.receiveShadow = true;
+            jaguarRoot.add(centerBodyMesh);
+
+            // ------------------------------------------------------------------
+            // B. MUSCULAR JAGUAR F-TYPE FRONT & REAR FENDER HAUNCHES
+            // ------------------------------------------------------------------
+            const frontFenderProfile = new THREE.Shape();
+            frontFenderProfile.moveTo(0.45, 0.22);
+            frontFenderProfile.quadraticCurveTo(0.55, 0.88, 1.35, 0.88);
+            frontFenderProfile.quadraticCurveTo(2.04, 0.80, 2.14, 0.26);
+            frontFenderProfile.lineTo(0.45, 0.22);
+
+            const fenderExtrude = {
+                depth: 0.28,
+                bevelEnabled: true,
+                bevelSegments: 8,
+                steps: 1,
+                bevelSize: 0.10,
+                bevelThickness: 0.12
+            };
+            const frontFenderGeo = new THREE.ExtrudeGeometry(frontFenderProfile, fenderExtrude);
+            frontFenderGeo.center();
+            frontFenderGeo.rotateY(Math.PI / 2);
+
+            [-0.78, 0.78].forEach((xSide) => {
+                const ff = new THREE.Mesh(frontFenderGeo, bodyPaintMaterial);
+                ff.position.set(xSide, 0.54, 1.30);
+                ff.castShadow = true;
+                jaguarRoot.add(ff);
+            });
+
+            // Signature F-Type Muscular Rear Haunches (Rear Quarter Panels)
+            const rearHaunchProfile = new THREE.Shape();
+            rearHaunchProfile.moveTo(-2.12, 0.26);
+            rearHaunchProfile.quadraticCurveTo(-2.16, 0.88, -1.35, 0.96);
+            rearHaunchProfile.quadraticCurveTo(-0.55, 0.95, -0.35, 0.24);
+            rearHaunchProfile.lineTo(-2.12, 0.26);
+
+            const rearHaunchGeo = new THREE.ExtrudeGeometry(rearHaunchProfile, {
+                depth: 0.34,
+                bevelEnabled: true,
+                bevelSegments: 10,
+                steps: 1,
+                bevelSize: 0.12,
+                bevelThickness: 0.14
+            });
+            rearHaunchGeo.center();
+            rearHaunchGeo.rotateY(Math.PI / 2);
+
+            [-0.80, 0.80].forEach((xSide) => {
+                const rh = new THREE.Mesh(rearHaunchGeo, bodyPaintMaterial);
+                rh.position.set(xSide, 0.58, -1.25);
+                rh.castShadow = true;
+                jaguarRoot.add(rh);
+            });
+
+            // ------------------------------------------------------------------
+            // C. FASTBACK TEARDROP COUPE GREENHOUSE (CABIN ROOF & RAKED WINDSHIELD)
+            // ------------------------------------------------------------------
+            const cabinProfile = new THREE.Shape();
+            cabinProfile.moveTo(-1.72, 0.86);
+            cabinProfile.quadraticCurveTo(-1.05, 1.34, -0.15, 1.36); // Sleek fastback roof arch
+            cabinProfile.quadraticCurveTo(0.42, 1.34, 0.82, 0.88);   // Raked windshield slope
+            cabinProfile.lineTo(-1.72, 0.86);
+
+            const cabinGeo = new THREE.ExtrudeGeometry(cabinProfile, {
+                depth: 1.04,
+                bevelEnabled: true,
+                bevelSegments: 10,
+                steps: 2,
+                bevelSize: 0.14,
+                bevelThickness: 0.18
+            });
+            cabinGeo.center();
+            cabinGeo.rotateY(Math.PI / 2);
+
+            const cabinGlassMesh = new THREE.Mesh(cabinGeo, tintedGlassMat);
+            cabinGlassMesh.position.set(0, 1.08, -0.42);
+            jaguarRoot.add(cabinGlassMesh);
+
+            // Painted Roof Pillars Arch
+            const roofSpineGeo = new THREE.BoxGeometry(0.96, 0.05, 1.15);
+            const roofSpine = new THREE.Mesh(roofSpineGeo, pianoBlackMat);
+            roofSpine.position.set(0, 1.33, -0.35);
+            jaguarRoot.add(roofSpine);
+
+            // ------------------------------------------------------------------
+            // D. LUXURY INTERIOR CABIN (2 Leather Sport Bucket Seats + Steering Wheel + Console)
+            // ------------------------------------------------------------------
+            const leatherMat = new THREE.MeshStandardMaterial({
+                color: 0x2b0918,
+                roughness: 0.45,
+                metalness: 0.1
+            });
+
+            [-0.36, 0.36].forEach((seatX, idx) => {
+                const seatGroup = new THREE.Group();
+                const cushion = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.12, 0.46), leatherMat);
+                cushion.position.set(0, 0.48, -0.25);
+                seatGroup.add(cushion);
+
+                const backrest = new THREE.Mesh(new THREE.BoxGeometry(0.40, 0.58, 0.12), leatherMat);
+                backrest.position.set(0, 0.78, -0.45);
+                backrest.rotation.x = -0.22;
+                seatGroup.add(backrest);
+
+                const headrest = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.18, 0.10), roseGoldChromeMat);
+                headrest.position.set(0, 1.08, -0.52);
+                seatGroup.add(headrest);
+
+                seatGroup.position.x = seatX;
+                jaguarRoot.add(seatGroup);
+                if (idx === 0) registerPartMesh(backrest, 2); // Clicking Lylia's seat triggers Part 3
+            });
+
+            // Steering Wheel & Glowing Infotainment Console
+            const steeringWheel = new THREE.Mesh(
+                new THREE.TorusGeometry(0.14, 0.022, 12, 32),
+                pianoBlackMat
+            );
+            steeringWheel.position.set(0.36, 0.82, 0.18);
+            steeringWheel.rotation.x = -0.35;
+            jaguarRoot.add(steeringWheel);
+
+            const centerScreen = new THREE.Mesh(
+                new THREE.PlaneGeometry(0.22, 0.14),
+                new THREE.MeshBasicMaterial({ color: 0xf43f5e })
+            );
+            centerScreen.position.set(0, 0.80, 0.25);
+            centerScreen.rotation.x = -0.4;
+            centerScreen.rotation.y = Math.PI;
+            jaguarRoot.add(centerScreen);
+
+            // ------------------------------------------------------------------
+            // E. PART 1: CLAMSHELL V8 HOOD + GLOWING 3D HEART SUPERCHARGED ENGINE
+            // ------------------------------------------------------------------
+            // Engine Bay Recess & Glowing 3D Beating Heart V8 Core
+            const heartShape = createHeartShape();
+            const engineHeartGeo = new THREE.ExtrudeGeometry(heartShape, {
+                depth: 0.22,
+                bevelEnabled: true,
+                bevelSegments: 6,
+                steps: 1,
+                bevelSize: 0.12,
+                bevelThickness: 0.12
+            });
+            engineHeartGeo.center();
+
+            const engineHeartMat = new THREE.MeshPhysicalMaterial({
+                color: 0xf43f5e,
+                emissive: 0xe11d48,
+                emissiveIntensity: 0.95,
+                roughness: 0.1,
+                metalness: 0.3,
+                clearcoat: 1.0
+            });
+
+            heartEngineMesh = new THREE.Mesh(engineHeartGeo, engineHeartMat);
+            heartEngineMesh.scale.set(0.26, 0.26, 0.26);
+            heartEngineMesh.rotation.x = -Math.PI / 2;
+            heartEngineMesh.position.set(0, 0.82, 1.28);
+            jaguarRoot.add(heartEngineMesh);
+            registerPartMesh(heartEngineMesh, 0);
+
+            // Twin V8 Chrome Intake Manifolds framing the Heart Core
+            [-0.28, 0.28].forEach((mx) => {
+                const intake = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.06, 0.06, 0.65, 16),
+                    roseGoldChromeMat
+                );
+                intake.rotation.x = Math.PI / 2;
+                intake.position.set(mx, 0.80, 1.28);
+                jaguarRoot.add(intake);
+                registerPartMesh(intake, 0);
+            });
+
+            // Articulated Clamshell Hood Panel (Pivots at front hinge like a real Jaguar F-Type)
+            hoodPanelGroup = new THREE.Group();
+            hoodPanelGroup.position.set(0, 0.78, 1.95); // Front hinge pivot
+            jaguarRoot.add(hoodPanelGroup);
+
+            const hoodFrameGeo = new THREE.BoxGeometry(1.18, 0.04, 1.18);
+            const hoodFrame = new THREE.Mesh(hoodFrameGeo, bodyPaintMaterial);
+            hoodFrame.position.set(0, 0.08, -0.62);
+            hoodFrame.rotation.x = 0.09;
+            hoodPanelGroup.add(hoodFrame);
+            registerPartMesh(hoodFrame, 0);
+
+            // Transparent Showcase Glass Window in the Center of the Hood + Twin Power-Bulge Louvers
+            const hoodWindow = new THREE.Mesh(
+                new THREE.BoxGeometry(0.58, 0.05, 0.68),
+                tintedGlassMat
+            );
+            hoodWindow.position.set(0, 0.095, -0.62);
+            hoodWindow.rotation.x = 0.09;
+            hoodPanelGroup.add(hoodWindow);
+            registerPartMesh(hoodWindow, 0);
+
+            [-0.38, 0.38].forEach((vx) => {
+                const ventMesh = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.12, 0.06, 0.52),
+                    carbonFiberMat
+                );
+                ventMesh.position.set(vx, 0.10, -0.62);
+                ventMesh.rotation.x = 0.09;
+                hoodPanelGroup.add(ventMesh);
+                registerPartMesh(ventMesh, 0);
+            });
+
+            // ------------------------------------------------------------------
+            // F. PART 2: ICONIC JAGUAR OVAL GRILLE & SWEPT "J-BLADE" PIXEL LED HEADLIGHTS
+            // ------------------------------------------------------------------
+            // Recessed Oval Mesh Grille with Rose-Gold Surround
+            const grilleBezel = new THREE.Mesh(
+                new THREE.TorusGeometry(0.38, 0.032, 16, 48),
+                roseGoldChromeMat
+            );
+            grilleBezel.scale.set(1.55, 0.62, 1.0);
+            grilleBezel.position.set(0, 0.45, 2.22);
+            jaguarRoot.add(grilleBezel);
+
+            const grilleMesh = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.37, 0.37, 0.06, 32),
+                carbonFiberMat
+            );
+            grilleMesh.rotation.x = Math.PI / 2;
+            grilleMesh.scale.set(1.52, 1.0, 0.60);
+            grilleMesh.position.set(0, 0.45, 2.20);
+            jaguarRoot.add(grilleMesh);
+
+            // Front Aerodynamic Carbon Splitter & Side Intakes
+            const frontSplitter = new THREE.Mesh(
+                new THREE.BoxGeometry(1.88, 0.045, 0.38),
+                carbonFiberMat
+            );
+            frontSplitter.position.set(0, 0.20, 2.08);
+            jaguarRoot.add(frontSplitter);
+
+            // Swept-Back "J-Blade" LED Headlights (Left & Right)
+            jBladeMat = new THREE.MeshBasicMaterial({ color: 0xfff1f2 });
+
+            [-1, 1].forEach((side) => {
+                const hlGroup = new THREE.Group();
+                hlGroup.position.set(side * 0.72, 0.68, 1.92);
+                hlGroup.rotation.y = side * 0.32;
+                hlGroup.rotation.x = 0.18;
+
+                // Housing
+                const housing = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.32, 0.09, 0.44),
+                    pianoBlackMat
+                );
+                hlGroup.add(housing);
+                registerPartMesh(housing, 1);
+
+                // Signature Glowing J-Blade LED Strip
+                const jBladeStrip = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.28, 0.035, 0.40),
+                    jBladeMat
+                );
+                jBladeStrip.position.y = 0.035;
+                hlGroup.add(jBladeStrip);
+                registerPartMesh(jBladeStrip, 1);
+
+                jaguarRoot.add(hlGroup);
+            });
+
+            // Volumetric Headlight Cones (Activated when Part 2 is clicked)
+            const beamGeo = new THREE.ConeGeometry(0.68, 3.8, 32, 1, true);
+            beamGeo.translate(0, -1.9, 0);
+            beamGeo.rotateX(-Math.PI / 2);
+
+            const beamMat = new THREE.MeshBasicMaterial({
+                color: 0xffe4e6,
+                transparent: true,
+                opacity: 0.0,
+                side: THREE.DoubleSide,
+                depthWrite: false,
+                blending: THREE.AdditiveBlending
+            });
+
+            headlightBeamLeft = new THREE.Mesh(beamGeo, beamMat);
+            headlightBeamLeft.position.set(-0.72, 0.64, 2.08);
+            jaguarRoot.add(headlightBeamLeft);
+
+            headlightBeamRight = new THREE.Mesh(beamGeo, beamMat);
+            headlightBeamRight.position.set(0.72, 0.64, 2.08);
+            jaguarRoot.add(headlightBeamRight);
+
+            // ------------------------------------------------------------------
+            // G. PART 3: ANIMATED SWAN-WING VIP PASSENGER DOOR (Left Side X = -0.82)
+            // ------------------------------------------------------------------
+            leftDoorPivotGroup = new THREE.Group();
+            leftDoorPivotGroup.position.set(-0.84, 0.62, 0.58); // Front door hinge
+            jaguarRoot.add(leftDoorPivotGroup);
+
+            const doorPanel = new THREE.Mesh(
+                new THREE.BoxGeometry(0.12, 0.52, 1.16),
+                bodyPaintMaterial
+            );
+            doorPanel.position.set(0, 0, -0.55);
+            doorPanel.castShadow = true;
+            leftDoorPivotGroup.add(doorPanel);
+            registerPartMesh(doorPanel, 2);
+
+            // Flush Deployable Jaguar Door Handle in Rose Gold
+            const doorHandle = new THREE.Mesh(
+                new THREE.BoxGeometry(0.04, 0.035, 0.18),
+                roseGoldChromeMat
+            );
+            doorHandle.position.set(-0.065, 0.12, -0.85);
+            leftDoorPivotGroup.add(doorHandle);
+            registerPartMesh(doorHandle, 2);
+
+            // Aerodynamic Side Mirror on Door
+            const sideMirror = new THREE.Mesh(
+                new THREE.BoxGeometry(0.22, 0.09, 0.14),
+                bodyPaintMaterial
+            );
+            sideMirror.position.set(-0.14, 0.28, -0.18);
+            leftDoorPivotGroup.add(sideMirror);
+            registerPartMesh(sideMirror, 2);
+
+            // Right-Side Door Handle & Mirror for Symmetry
+            const rightMirror = sideMirror.clone();
+            rightMirror.position.set(0.96, 0.90, 0.40);
+            jaguarRoot.add(rightMirror);
+
+            // Carbon Side Skirts with Rose-Gold Pin-Stripe
+            [-0.88, 0.88].forEach((sx) => {
+                const skirt = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.12, 0.06, 1.85),
+                    carbonFiberMat
+                );
+                skirt.position.set(sx, 0.21, 0);
+                jaguarRoot.add(skirt);
+            });
+
+            // ------------------------------------------------------------------
+            // H. PART 4: 21" FORGED 10-SPOKE ALLOY RIMS, TIRES & BRAKE CALIPERS
+            // ------------------------------------------------------------------
+            const tireMat = new THREE.MeshStandardMaterial({
+                color: 0x111114,
+                roughness: 0.78,
+                metalness: 0.15
+            });
+
+            const alloyMat = new THREE.MeshStandardMaterial({
+                color: 0x27272a,
+                roughness: 0.2,
+                metalness: 0.92
+            });
+
+            const brakeDiscMat = new THREE.MeshStandardMaterial({
+                color: 0xa1a1aa,
+                roughness: 0.35,
+                metalness: 0.85
+            });
+
+            const wheelPositions = [
+                { x:  0.86, y: 0.42, z:  1.38, isRight: true },  // Front Left/Right
+                { x: -0.86, y: 0.42, z:  1.38, isRight: false },
+                { x:  0.88, y: 0.44, z: -1.36, isRight: true },  // Rear Left/Right
+                { x: -0.88, y: 0.44, z: -1.36, isRight: false }
+            ];
+
+            wheelPositions.forEach((wp) => {
+                const wheelAssembly = new THREE.Group();
+                wheelAssembly.position.set(wp.x, wp.y, wp.z);
+                jaguarRoot.add(wheelAssembly);
+
+                // Stationary Brake Caliper (Painted Jaguar Crimson/Rose)
+                const caliper = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.14, 0.22, 0.15),
+                    caliperMaterial
+                );
+                caliper.position.set(wp.isRight ? 0.06 : -0.06, 0.08, -0.18);
+                wheelAssembly.add(caliper);
+                registerPartMesh(caliper, 3);
+
+                // Rotating Tire + 10-Spoke Forged Rim Group
+                const spinGroup = new THREE.Group();
+                wheelAssembly.add(spinGroup);
+
+                // Low-Profile Sport Tire Barrel
+                const tireBarrel = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.42, 0.42, 0.30, 40),
+                    tireMat
+                );
+                tireBarrel.rotation.z = Math.PI / 2;
+                tireBarrel.castShadow = true;
+                spinGroup.add(tireBarrel);
+                registerPartMesh(tireBarrel, 3);
+
+                // Tire Sidewall Shoulder Rounding
+                const tireShoulder = new THREE.Mesh(
+                    new THREE.TorusGeometry(0.34, 0.085, 16, 40),
+                    tireMat
+                );
+                tireShoulder.rotation.y = Math.PI / 2;
+                tireShoulder.position.x = wp.isRight ? 0.11 : -0.11;
+                spinGroup.add(tireShoulder);
+
+                // Outer Forged Rim Lip in Rose Gold Chrome
+                const rimLip = new THREE.Mesh(
+                    new THREE.TorusGeometry(0.30, 0.022, 16, 40),
+                    roseGoldChromeMat
+                );
+                rimLip.rotation.y = Math.PI / 2;
+                rimLip.position.x = wp.isRight ? 0.14 : -0.14;
+                spinGroup.add(rimLip);
+                registerPartMesh(rimLip, 3);
+
+                // Ventilated Steel Brake Rotor inside the wheel
+                const rotor = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.26, 0.26, 0.04, 32),
+                    brakeDiscMat
+                );
+                rotor.rotation.z = Math.PI / 2;
+                spinGroup.add(rotor);
+
+                // 10 Twin-Spokes in Dark Forged Alloy + Rose Gold Center Cap
+                for (let s = 0; s < 10; s++) {
+                    const angle = (s / 10) * Math.PI * 2;
+                    const spoke = new THREE.Mesh(
+                        new THREE.BoxGeometry(0.03, 0.29, 0.028),
+                        s % 2 === 0 ? roseGoldChromeMat : alloyMat
+                    );
+                    spoke.position.x = wp.isRight ? 0.135 : -0.135;
+                    spoke.position.y = Math.cos(angle) * 0.14;
+                    spoke.position.z = Math.sin(angle) * 0.14;
+                    spoke.rotation.x = angle;
+                    spinGroup.add(spoke);
+                    registerPartMesh(spoke, 3);
+                }
+
+                const centerCap = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.065, 0.065, 0.05, 20),
+                    caliperMaterial
+                );
+                centerCap.rotation.z = Math.PI / 2;
+                centerCap.position.x = wp.isRight ? 0.135 : -0.135;
+                spinGroup.add(centerCap);
+
+                wheelGroups.push(spinGroup);
+            });
+
+            // ------------------------------------------------------------------
+            // I. PART 5: CHICANE LED TAIL LIGHTS, QUAD EXHAUSTS & ACTIVE REAR SPOILER
+            // ------------------------------------------------------------------
+            const tailLightMat = new THREE.MeshBasicMaterial({ color: 0xff1e56 });
+
+            // Ultra-Slim Jaguar F-Type Horizontal Chicane LED Tail Lights
+            const rearLightBar = new THREE.Mesh(
+                new THREE.BoxGeometry(1.62, 0.042, 0.08),
+                tailLightMat
+            );
+            rearLightBar.position.set(0, 0.78, -2.14);
+            jaguarRoot.add(rearLightBar);
+            registerPartMesh(rearLightBar, 4);
+
+            // Rear Carbon Diffuser & Quad Exhaust Tips
+            const rearDiffuser = new THREE.Mesh(
+                new THREE.BoxGeometry(1.72, 0.18, 0.22),
+                carbonFiberMat
+            );
+            rearDiffuser.position.set(0, 0.28, -2.12);
+            jaguarRoot.add(rearDiffuser);
+            registerPartMesh(rearDiffuser, 4);
+
+            [-0.58, -0.44, 0.44, 0.58].forEach((exX) => {
+                const pipe = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.048, 0.048, 0.22, 20),
+                    roseGoldChromeMat
+                );
+                pipe.rotation.x = Math.PI / 2;
+                pipe.position.set(exX, 0.28, -2.20);
+                jaguarRoot.add(pipe);
+                registerPartMesh(pipe, 4);
+            });
+
+            // Custom "NINA ❤️" Rear License Plate
+            const plateCanvas = document.createElement('canvas');
+            plateCanvas.width = 512;
+            plateCanvas.height = 128;
+            const pCtx = plateCanvas.getContext('2d');
+            pCtx.fillStyle = '#0f050b';
+            pCtx.fillRect(0, 0, 512, 128);
+            pCtx.strokeStyle = '#fda4af';
+            pCtx.lineWidth = 6;
+            pCtx.strokeRect(8, 8, 496, 112);
+            pCtx.fillStyle = '#fff1f2';
+            pCtx.font = 'bold 58px "JetBrains Mono", monospace';
+            pCtx.textAlign = 'center';
+            pCtx.textBaseline = 'middle';
+            pCtx.fillText('NINA ❤️', 256, 66);
+
+            const plateTex = new THREE.CanvasTexture(plateCanvas);
+            const licensePlate = new THREE.Mesh(
+                new THREE.PlaneGeometry(0.56, 0.14),
+                new THREE.MeshBasicMaterial({ map: plateTex })
+            );
+            licensePlate.position.set(0, 0.54, -2.185);
+            licensePlate.rotation.y = Math.PI;
+            jaguarRoot.add(licensePlate);
+            registerPartMesh(licensePlate, 4);
+
+            // Deployable Active Rear Aerodynamic Wing
+            activeSpoilerGroup = new THREE.Group();
+            activeSpoilerGroup.position.set(0, 0.90, -1.92);
+            jaguarRoot.add(activeSpoilerGroup);
+
+            const wingBlade = new THREE.Mesh(
+                new THREE.BoxGeometry(1.52, 0.035, 0.28),
+                bodyPaintMaterial
+            );
+            wingBlade.position.set(0, 0.08, 0);
+            activeSpoilerGroup.add(wingBlade);
+            registerPartMesh(wingBlade, 4);
+
+            [-0.45, 0.45].forEach((strutX) => {
+                const strut = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.04, 0.14, 0.12),
+                    carbonFiberMat
+                );
+                strut.position.set(strutX, 0.02, 0);
+                activeSpoilerGroup.add(strut);
+                registerPartMesh(strut, 4);
+            });
+        }
+
+        // Spawn 3D Heart Burst from the Rear Exhaust / Trunk
+        function spawnExhaustHeartFountain(count = 26) {
+            const heartShape = createHeartShape();
+            const heartGeo = new THREE.ExtrudeGeometry(heartShape, {
+                depth: 0.15,
+                bevelEnabled: true,
+                bevelSegments: 3,
+                steps: 1,
+                bevelSize: 0.08,
+                bevelThickness: 0.08
+            });
+            heartGeo.center();
+
+            const palette = [0xf43f5e, 0xfb7185, 0xfbbf24, 0xffd1dc];
+
+            for (let i = 0; i < count; i++) {
+                const mat = new THREE.MeshPhongMaterial({
+                    color: palette[i % palette.length],
+                    emissive: 0x4c0519,
+                    shininess: 100
+                });
+
+                const mesh = new THREE.Mesh(heartGeo, mat);
+                const s = 0.07 + Math.random() * 0.10;
+                mesh.scale.set(s, s, s);
+
+                // Start near rear spoiler/exhausts
+                mesh.position.set(
+                    (Math.random() - 0.5) * 1.1,
+                    0.55 + Math.random() * 0.4,
+                    -2.15
+                );
+
+                const velocity = new THREE.Vector3(
+                    (Math.random() - 0.5) * 0.06,
+                    0.05 + Math.random() * 0.09,
+                    -0.04 - Math.random() * 0.08
+                );
+
+                scene.add(mesh);
+                exhaustHeartParticles.push({
+                    mesh,
+                    velocity,
+                    life: 1.0,
+                    rotSpeed: (Math.random() - 0.5) * 0.12
+                });
+            }
+        }
+
+        function buildHyperdriveSpeedLines() {
+            const lineMat = new THREE.MeshBasicMaterial({
+                color: 0xfb7185,
+                transparent: true,
+                opacity: 0.0
+            });
+
+            for (let i = 0; i < 65; i++) {
+                const lineGeo = new THREE.BoxGeometry(0.025, 0.025, 2.2 + Math.random() * 3.5);
+                const lineMesh = new THREE.Mesh(lineGeo, lineMat);
+
+                const angle = Math.random() * Math.PI * 2;
+                const radius = 2.6 + Math.random() * 6.5;
+                lineMesh.position.set(
+                    Math.cos(angle) * radius,
+                    0.2 + Math.random() * 3.8,
+                    (Math.random() - 0.5) * 28
+                );
+
+                scene.add(lineMesh);
+                hyperdriveLines.push({
+                    mesh: lineMesh,
+                    speed: 0.35 + Math.random() * 0.45
+                });
+            }
+        }
+
+        /*************************************************************************
+         * 4. 3D FLOATING HOTSPOT PINS & CAMERA INSPECTION SYSTEM
+         *************************************************************************/
+        let hotspotDOMElements = [];
+
+        function initHotspotPins() {
+            const layer = document.getElementById('hotspots-layer');
+            layer.innerHTML = '';
+            hotspotDOMElements = [];
+
+            JAGUAR_PARTS.forEach((part, idx) => {
+                const btn = document.createElement('button');
+                btn.className = 'car-hotspot group flex items-center gap-1.5';
+                btn.innerHTML = `
+                    <div class="relative flex items-center justify-center w-7 h-7">
+                        <span class="pin-ring"></span>
+                        <span class="pin-core relative z-10 w-7 h-7 rounded-full bg-rose-600/90 border border-rose-200 text-white font-telemetry text-[11px] font-bold flex items-center justify-center shadow-lg">
+                            ${part.number}
+                        </span>
+                    </div>
+                    <span class="hidden sm:inline-block hud-pill px-2.5 py-1 rounded-full text-[11px] font-medium text-rose-100 opacity-90 group-hover:opacity-100 group-hover:bg-rose-600/80 transition whitespace-nowrap shadow-md">
+                        ${part.label}
+                    </span>
+                `;
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    selectCarPart(idx);
+                });
+                layer.appendChild(btn);
+                hotspotDOMElements.push(btn);
+            });
+        }
+
+        function updateHotspotPositions() {
+            const widthHalf = window.innerWidth / 2;
+            const heightHalf = window.innerHeight / 2;
+
+            JAGUAR_PARTS.forEach((part, idx) => {
+                const el = hotspotDOMElements[idx];
+                if (!el) return;
+
+                const worldPos = part.hotspot3D.clone();
+                worldPos.project(camera);
+
+                // Hide if behind camera
+                if (worldPos.z > 1) {
+                    el.style.opacity = '0';
+                    el.style.pointerEvents = 'none';
+                    return;
+                }
+
+                const x = (worldPos.x * widthHalf) + widthHalf;
+                const y = -(worldPos.y * heightHalf) + heightHalf;
+
+                el.style.left = `${x}px`;
+                el.style.top = `${y}px`;
+                el.style.opacity = '1';
+                el.style.pointerEvents = 'auto';
+            });
+        }
+
+        // Paint Customizer Function
+        window.setCarPaint = function(presetKey, btnEl) {
+            const preset = PAINT_PRESETS[presetKey];
+            if (!preset || !bodyPaintMaterial) return;
+
+            document.querySelectorAll('.paint-swatch').forEach(b => b.classList.remove('active'));
+            if (btnEl) btnEl.classList.add('active');
+
+            const targetColor = new THREE.Color(preset.color);
+            const targetEmissive = new THREE.Color(preset.emissive);
+
+            gsap.to(bodyPaintMaterial.color, { r: targetColor.r, g: targetColor.g, b: targetColor.b, duration: 0.65 });
+            gsap.to(bodyPaintMaterial.emissive, { r: targetEmissive.r, g: targetEmissive.g, b: targetEmissive.b, duration: 0.65 });
+            bodyPaintMaterial.roughness = preset.roughness;
+            bodyPaintMaterial.metalness = preset.metalness;
+
+            audio.playPartChime(640);
+        };
+
+        // Main Handler when Lylia clicks any of the 5 Jaguar parts
+        window.selectCarPart = function(partIndex) {
+            const part = JAGUAR_PARTS[partIndex];
+            if (!part) return;
+
+            currentPartIndex = partIndex;
+            visitedParts.add(partIndex);
+
+            // Mark Hotspot Pin as Visited
+            if (hotspotDOMElements[partIndex]) {
+                hotspotDOMElements[partIndex].classList.add('visited');
+            }
+
+            // Highlight Bottom Dock Button
+            document.querySelectorAll('.part-dock-btn').forEach((btn, idx) => {
+                if (idx === partIndex) {
+                    btn.classList.add('bg-rose-500/30', 'border-rose-400');
+                } else {
+                    btn.classList.remove('bg-rose-500/30', 'border-rose-400');
+                }
+            });
+
+            // Smooth GSAP Camera Flight to the Part
+            gsap.to(camera.position, {
+                x: part.camPos.x,
+                y: part.camPos.y,
+                z: part.camPos.z,
+                duration: 1.15,
+                ease: 'power3.out'
+            });
+
+            gsap.to(controls.target, {
+                x: part.camTarget.x,
+                y: part.camTarget.y,
+                z: part.camTarget.z,
+                duration: 1.15,
+                ease: 'power3.out'
+            });
+
+            // Trigger Mechanical Animation Specific to the Part
+            triggerMechanicalPartAction(partIndex);
+
+            // Populate & Show the Luxury Message Card for Nina
+            document.getElementById('part-badge').textContent = `PART ${part.number} / 05 · ${part.label.toUpperCase()}`;
+            document.getElementById('part-title').textContent = part.title;
+            document.getElementById('part-message').textContent = part.message;
+            document.getElementById('part-spec-1').textContent = part.spec1;
+            document.getElementById('part-spec-2').textContent = part.spec2;
+
+            const nextBtn = document.getElementById('next-part-btn');
+            if (partIndex === 4) {
+                nextBtn.innerHTML = `<span>Open Proposal For Nina</span><span>❤️</span>`;
+            } else {
+                nextBtn.innerHTML = `<span>Inspect Next Part (${JAGUAR_PARTS[partIndex + 1].label})</span><span>→</span>`;
+            }
+
+            const infoCard = document.getElementById('part-info-card');
+            infoCard.classList.remove('opacity-0', 'translate-x-8', 'pointer-events-none');
+            infoCard.classList.add('opacity-100', 'translate-x-0', 'pointer-events-auto');
+        };
+
+        function triggerMechanicalPartAction(partIndex) {
+            if (partIndex === 0) {
+                // Part 1: Open Clamshell Hood & Rev V8 Heart
+                audio.playV8Rev();
+                isHoodOpen = !isHoodOpen;
+                gsap.to(hoodPanelGroup.rotation, {
+                    x: isHoodOpen ? -0.52 : 0,
+                    duration: 0.9,
+                    ease: 'power2.inOut'
+                });
+            } else if (partIndex === 1) {
+                // Part 2: Flash Volumetric J-Blade Headlights
+                audio.playPartChime(680);
+                areHighBeamsOn = true;
+                gsap.fromTo(
+                    headlightBeamLeft.material,
+                    { opacity: 0.45 },
+                    { opacity: 0.22, duration: 0.8, yoyo: true, repeat: 1 }
+                );
+            } else if (partIndex === 2) {
+                // Part 3: Swing Open Lylia's Swan-Wing VIP Passenger Door
+                audio.playPartChime(540);
+                isDoorOpen = !isDoorOpen;
+                gsap.to(leftDoorPivotGroup.rotation, {
+                    y: isDoorOpen ? -0.95 : 0,
+                    z: isDoorOpen ? 0.18 : 0,
+                    duration: 0.95,
+                    ease: 'back.out(1.4)'
+                });
+            } else if (partIndex === 3) {
+                // Part 4: High-Speed Alloy Wheel Spin Boost
+                audio.playV8Rev();
+                wheelSpinBoost = 0.28;
+                gsap.to({ val: 0.28 }, {
+                    val: 0.015,
+                    duration: 2.2,
+                    onUpdate: function() {
+                        wheelSpinBoost = this.targets()[0].val;
+                    }
+                });
+            } else if (partIndex === 4) {
+                // Part 5: Deploy Active Rear Spoiler + Shoot Heart Fountain + Open Proposal
+                audio.playV8Rev();
+                isSpoilerUp = true;
+                gsap.to(activeSpoilerGroup.position, {
+                    y: 1.06,
+                    duration: 0.7,
+                    ease: 'back.out(1.7)'
+                });
+                gsap.to(activeSpoilerGroup.rotation, {
+                    x: 0.22,
+                    duration: 0.7
+                });
+                spawnExhaustHeartFountain(32);
+            }
+        }
+
+        function resetCameraToFullOrbit() {
+            const infoCard = document.getElementById('part-info-card');
+            infoCard.classList.add('opacity-0', 'translate-x-8', 'pointer-events-none');
+            infoCard.classList.remove('opacity-100', 'translate-x-0', 'pointer-events-auto');
+
+            gsap.to(camera.position, {
+                x: 4.1,
+                y: 2.05,
+                z: 4.6,
+                duration: 1.1,
+                ease: 'power3.out'
+            });
+
+            gsap.to(controls.target, {
+                x: 0,
+                y: 0.65,
+                z: 0,
+                duration: 1.1,
+                ease: 'power3.out'
+            });
+        }
+
+        /*************************************************************************
+         * 5. RAYCASTING & PROPOSAL MODAL ("NO" DODGE + HYPERDRIVE CELEBRATION)
+         *************************************************************************/
+        const proposalModal = document.getElementById('proposal-modal');
+        const questionBox = document.getElementById('proposal-question-box');
+        const celebrationBox = document.getElementById('proposal-celebration-box');
+        const noBtn = document.getElementById('no-btn');
+        const yesBtn = document.getElementById('yes-btn');
+        const teaseToast = document.getElementById('tease-toast');
+        const noHintText = document.getElementById('no-hint-text');
+
+        let noAttempts = 0;
+        let isNoDetached = false;
+        let toastTimer = null;
+
+        const jaguarNoLabels = [
+            "Brakes Disconnected, Nina! 🏎️",
+            "Nice try, Nina! 😉",
+            "ECU Override: Only YES ❤️",
+            "Nice try Nina, Locked!",
+            "GPS Rerouting to YES ❤️",
+            "Error 404: No Not Found",
+            "Click the Pink Pedal! 👉"
+        ];
+
+        const jaguarToastMessages = [
+            "Brakes Disconnected, Nina! This Jaguar only drives toward YES 😉🏎️",
+            "ECU Override: Only YES Allowed ❤️ Rejecting me is mechanically impossible!",
+            "Nice try Nina, Traction Control Locked! Look how much 'Yes' is glowing ✨",
+            "Even the V8 heart engine is revving for you to click YES, Nina! 💖"
+        ];
+
+        function showToast(msg) {
+            teaseToast.textContent = msg;
+            teaseToast.classList.remove('opacity-0', '-translate-y-2');
+            teaseToast.classList.add('opacity-100', 'translate-y-0');
+            if (toastTimer) clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => {
+                teaseToast.classList.remove('opacity-100', 'translate-y-0');
+                teaseToast.classList.add('opacity-0', '-translate-y-2');
+            }, 2500);
+        }
+
+        function openProposalModal() {
+            audio.playPartChime(740);
+            proposalModal.classList.remove('opacity-0', 'pointer-events-none');
+            proposalModal.classList.add('opacity-100', 'pointer-events-auto');
+        }
+
+        function closeProposalModal() {
+            proposalModal.classList.add('opacity-0', 'pointer-events-none');
+            proposalModal.classList.remove('opacity-100', 'pointer-events-auto');
+            if (isNoDetached) {
+                noBtn.style.position = '';
+                noBtn.style.left = '';
+                noBtn.style.top = '';
+                noBtn.style.zIndex = '';
+                document.getElementById('proposal-btn-stage').appendChild(noBtn);
+                isNoDetached = false;
+            }
+        }
+
+        function evadeNoButton(e) {
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            noAttempts++;
+            audio.playPartChime(460 + (noAttempts % 5) * 70);
+
+            noHintText.classList.remove('opacity-0');
+            noHintText.classList.add('opacity-100');
+
+            noBtn.textContent = jaguarNoLabels[(noAttempts - 1) % jaguarNoLabels.length];
+            showToast(jaguarToastMessages[(noAttempts - 1) % jaguarToastMessages.length]);
+
+            // Grow the YES button playfully
+            const scale = Math.min(1.4, 1 + noAttempts * 0.065);
+            yesBtn.style.transform = `scale(${scale})`;
+
+            if (!isNoDetached) {
+                const rect = noBtn.getBoundingClientRect();
+                noBtn.style.position = 'fixed';
+                noBtn.style.left = `${rect.left}px`;
+                noBtn.style.top = `${rect.top}px`;
+                noBtn.style.zIndex = '60';
+                document.body.appendChild(noBtn);
+                isNoDetached = true;
+            }
+
+            const btnRect = noBtn.getBoundingClientRect();
+            const yesRect = yesBtn.getBoundingClientRect();
+            const pad = 24;
+            const maxX = window.innerWidth - btnRect.width - pad;
+            const maxY = window.innerHeight - btnRect.height - pad;
+
+            let nx, ny, tries = 0;
+            do {
+                nx = Math.max(pad, Math.random() * maxX);
+                ny = Math.max(80, Math.random() * maxY);
+                tries++;
+            } while (
+                tries < 25 &&
+                nx + btnRect.width > yesRect.left - 45 &&
+                nx < yesRect.right + 45 &&
+                ny + btnRect.height > yesRect.top - 45 &&
+                ny < yesRect.bottom + 45
+            );
+
+            noBtn.style.left = `${nx}px`;
+            noBtn.style.top = `${ny}px`;
+        }
+
+        function setupInteractionEvents() {
+            // 3D Raycasting on Click/Tap for Car Parts
+            let pointerDownPos = { x: 0, y: 0 };
+
+            renderer.domElement.addEventListener('pointerdown', (e) => {
+                pointerDownPos = { x: e.clientX, y: e.clientY };
+            });
+
+            renderer.domElement.addEventListener('pointerup', (e) => {
+                const moveDist = Math.hypot(e.clientX - pointerDownPos.x, e.clientY - pointerDownPos.y);
+                if (moveDist > 6) return; // Ignore orbit drags
+
+                mouseVec.x = (e.clientX / window.innerWidth) * 2 - 1;
+                mouseVec.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+                raycaster.setFromCamera(mouseVec, camera);
+                const intersects = raycaster.intersectObjects(clickableMeshes, true);
+
+                if (intersects.length > 0) {
+                    const hitObj = intersects[0].object;
+                    if (hitObj.userData && typeof hitObj.userData.partIndex === 'number') {
+                        selectCarPart(hitObj.userData.partIndex);
+                    }
+                }
+            });
+
+            // Card & HUD Buttons
+            document.getElementById('close-part-btn').addEventListener('click', resetCameraToFullOrbit);
+            document.getElementById('reset-cam-btn').addEventListener('click', resetCameraToFullOrbit);
+
+            document.getElementById('next-part-btn').addEventListener('click', () => {
+                if (currentPartIndex === 4) {
+                    openProposalModal();
+                } else {
+                    selectCarPart((currentPartIndex + 1) % JAGUAR_PARTS.length);
+                }
+            });
+
+            document.getElementById('open-proposal-direct-btn').addEventListener('click', openProposalModal);
+            document.getElementById('minimize-modal-btn').addEventListener('click', closeProposalModal);
+
+            // Unclickable Dodging "No" Button Listeners
+            noBtn.addEventListener('mouseenter', evadeNoButton);
+            noBtn.addEventListener('touchstart', evadeNoButton, { passive: false });
+            noBtn.addEventListener('click', evadeNoButton);
+
+            // "Yes, I'm Yours!" -> Activate Hyperdrive Twin-Turbo Mode!
+            yesBtn.addEventListener('click', () => {
+                isHyperdrive = true;
+                wheelSpinBoost = 0.35;
+                audio.playCelebrationSymphony();
+
+                // Open Hood, Door, Spoiler & High-Beams all at once in celebration
+                gsap.to(hoodPanelGroup.rotation, { x: -0.45, duration: 0.8 });
+                gsap.to(leftDoorPivotGroup.rotation, { y: -0.92, z: 0.16, duration: 0.9 });
+                gsap.to(activeSpoilerGroup.position, { y: 1.06, duration: 0.7 });
+                gsap.to(headlightBeamLeft.material, { opacity: 0.32, duration: 0.6 });
+
+                if (hyperdriveLines.length > 0) {
+                    gsap.to(hyperdriveLines[0].mesh.material, { opacity: 0.75, duration: 0.8 });
+                }
+
+                spawnExhaustHeartFountain(48);
+
+                if (isNoDetached) {
+                    noBtn.style.opacity = '0';
+                    noBtn.style.pointerEvents = 'none';
+                }
+
+                questionBox.classList.add('hidden');
+                celebrationBox.classList.remove('hidden');
+            });
+
+            // Celebration Controls
+            document.getElementById('rev-engine-btn').addEventListener('click', () => {
+                audio.playCelebrationSymphony();
+                spawnExhaustHeartFountain(40);
+            });
+
+            document.getElementById('admire-jaguar-btn').addEventListener('click', () => {
+                closeProposalModal();
+                resetCameraToFullOrbit();
+            });
+
+            // Audio Toggle
+            const audioBtn = document.getElementById('audio-toggle-btn');
+            audioBtn.addEventListener('click', () => {
+                audio.enabled = !audio.enabled;
+                audioBtn.style.opacity = audio.enabled ? '1' : '0.4';
+                if (audio.enabled) audio.playPartChime(660);
+            });
+
+            // Window Resize
+            window.addEventListener('resize', () => {
+                if (!camera || !renderer) return;
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+        }
+
+        /*************************************************************************
+         * 6. MAIN 60FPS ANIMATION LOOP
+         *************************************************************************/
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const elapsed = clock.getElapsedTime();
+
+            controls.update();
+
+            // 1. Pulse the 3D Heart V8 Engine Core inside the Hood
+            if (heartEngineMesh) {
+                const beatSpeed = isHyperdrive ? 5.2 : 2.8;
+                const pulse = Math.pow(Math.sin(elapsed * beatSpeed), 6) * 0.05;
+                const s = 0.26 + pulse;
+                heartEngineMesh.scale.set(s, s, s);
+            }
+
+            // 2. Rotate the 10-Spoke Forged Alloy Wheels
+            wheelGroups.forEach((wg) => {
+                wg.rotation.x += wheelSpinBoost;
+            });
+
+            // 3. Subtle Idle Suspension Breathing
+            if (jaguarRoot) {
+                jaguarRoot.position.y = Math.sin(elapsed * 2.2) * 0.008;
+            }
+
+            // 4. Update 3D Heart Exhaust Fountain Particles
+            for (let i = exhaustHeartParticles.length - 1; i >= 0; i--) {
+                const p = exhaustHeartParticles[i];
+                p.mesh.position.add(p.velocity);
+                p.mesh.rotation.y += p.rotSpeed;
+                p.mesh.rotation.z += p.rotSpeed * 0.5;
+                p.life -= 0.011;
+
+                if (p.life <= 0) {
+                    scene.remove(p.mesh);
+                    exhaustHeartParticles.splice(i, 1);
+                } else {
+                    const scale = Math.max(0.001, p.life * 0.11);
+                    p.mesh.scale.set(scale, scale, scale);
+                }
+            }
+
+            // 5. Stream Hyperdrive Neon Speed Lines when in Celebration Mode
+            if (isHyperdrive) {
+                hyperdriveLines.forEach((item) => {
+                    item.mesh.position.z -= item.speed;
+                    if (item.mesh.position.z < -16) {
+                        item.mesh.position.z = 16;
+                    }
+                });
+            }
+
+            // 6. Project 3D Hotspot Coordinates onto 2D Screen
+            updateHotspotPositions();
+
+            renderer.render(scene, camera);
+        }
+
+        window.onload = function () {
+            initShowroom();
+            animate();
+        };
+    </script>
+</body>
+</html>
